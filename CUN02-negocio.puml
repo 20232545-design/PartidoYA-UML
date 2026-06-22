@@ -1,0 +1,21 @@
+@startuml "Organizar partido casual"
+left to right direction
+
+actor/ "Jugador" <<Business Actor>> as Jugador
+
+usecase/ "Organizar Partido Casual\n(Pichanga)" as CUN02
+
+Jugador --> CUN02
+
+skinparam usecase {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam actor {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam Arrow {
+  Color #7A1631
+}
+@enduml

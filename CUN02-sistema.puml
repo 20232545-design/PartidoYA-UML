@@ -1,0 +1,34 @@
+@startuml "Organizar partido casual"
+left to right direction
+skinparam usecase {
+  BackgroundColor #FFF9C4
+  BorderColor #7A1631
+  StereotypeFontColor #2E7D32
+}
+skinparam actor {
+  BackgroundColor #FFF9C4
+  BorderColor #7A1631
+}
+skinparam Arrow {
+  Color #7A1631
+}
+
+actor "Jugador" as Jugador
+actor "SendGrid" as SendGrid
+
+rectangle "Sistema PartidoYA - [Módulo Partidos]" {
+  usecase "Iniciar Sesión" as Login
+  usecase "Publicar Partido" as CUS_Crear
+  usecase "Cancelar Partido" as CUS_Cancelar
+  usecase "Gestionar Solicitudes de Unión\n<<Release 02>>" as CUS_Moderacion
+}
+
+Jugador -- CUS_Crear
+Jugador -- CUS_Cancelar
+Jugador -- CUS_Moderacion
+
+CUS_Crear ..> Login : <<include>>
+CUS_Cancelar ..> Login : <<include>>
+CUS_Moderacion ..> Login : <<include>>
+CUS_Cancelar -- SendGrid
+@enduml

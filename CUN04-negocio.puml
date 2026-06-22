@@ -1,0 +1,25 @@
+@startuml "Pagar cuota de alquiler"
+left to right direction
+
+actor/ "Jugador" <<Business Actor>> as Jugador
+actor/ "Administrador de Cancha" <<Business Worker>> as Admin
+actor/ "Pasarela Culqi" <<Business Actor>> as Culqi
+
+usecase/ "Pagar Cuota de Alquiler" as CUN04
+
+Jugador --> CUN04
+Admin --> CUN04
+CUN04 --> Culqi
+
+skinparam usecase {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam actor {
+  BackgroundColor #C7F4FF
+  BorderColor #7A1631
+}
+skinparam Arrow {
+  Color #7A1631
+}
+@enduml

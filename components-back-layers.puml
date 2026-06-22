@@ -1,0 +1,24 @@
+@startuml "Components-Layers"
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title PartidoYA - Partido Component Diagram (Layers)
+
+Container(spa, "Single Page Application", "Angular", "Provee toda la funcionalidad de búsqueda de partidos, gestión de perfil y reservas al navegador del usuario")
+ContainerDb(db, "Base de Datos", "MySQL", "Almacena información de usuarios, partidos, canchas, reservas y suscripciones")
+
+Container_Boundary(partido, "Partido Bounded Context") {
+    Component(domain, "Domain", "Entidades, Value Objects y reglas de negocio del dominio Partido: Partido, Jugador, Deporte, Cupo")
+    Component(application, "Application", "Casos de uso y servicios de aplicación: CrearPartido, UnirseAPartido, CancelarPartido, BuscarPartidos")
+    Component(interfaces, "Interfaces", "Controladores REST y DTOs que exponen los endpoints de la API del contexto Partido")
+    Component(infrastructure, "Infrastructure", "Repositorios JPA, mappers de persistencia e integraciones con Google Maps para ubicación de partidos")
+    Component(connector, "Security Connector", "Validación de tokens JWT y verificación de permisos del usuario sobre los recursos de Partido")
+}
+
+Rel(spa, interfaces, "Llama a los endpoints REST de Partido usando [HTTPS / JSON]")
+Rel(interfaces, application, "Delega operaciones a los casos de uso de Partido")
+Rel(application, domain, "Ejecuta lógica de negocio usando entidades y reglas del dominio")
+Rel(application, infrastructure, "Persiste y recupera datos de Partido usando repositorios")
+Rel(infrastructure, db, "Lee y escribe datos de partidos usando [Spring Data JPA]")
+Rel(infrastructure, connector, "Valida identidad y permisos del usuario")
+
+@enduml

@@ -1,0 +1,21 @@
+@startuml "Context"
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title PartidoYA - Context Diagram
+
+Person(jugador, "Jugador", "Deportista amateur que busca, se une y participa en actividades deportivas cercanas")
+Person(admin, "Administrador de Cancha", "Usuario comercial que gestiona los horarios y disponibilidad de sus canchas deportivas")
+
+System(system, "PartidoYA", "Plataforma digital que conecta jugadores con organizadores de actividades deportivas y canchas")
+
+System_Ext(gmaps, "Google Maps API", "Servicio de geolocalización y visualización de mapas")
+System_Ext(sendgrid, "SendGrid", "Servicio de envío de correos electrónicos de confirmación y notificaciones")
+System_Ext(payment, "Pasarela de Pagos", "Servicio externo para procesar pagos de reservas de canchas")
+
+Rel(jugador, system, "Busca partidos, se une a actividades y gestiona su perfil usando")
+Rel(admin, system, "Publica canchas, gestiona horarios y revisa reservas usando")
+Rel(system, gmaps, "Obtiene ubicaciones y muestra mapa de canchas usando")
+Rel(system, sendgrid, "Envía notificaciones y confirmaciones usando")
+Rel(system, payment, "Procesa pagos de reservas de canchas usando")
+
+@enduml

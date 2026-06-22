@@ -1,0 +1,31 @@
+@startuml "Containers"
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title PartidoYA - Container Diagram
+
+Person(jugador, "Jugador", "Deportista amateur que busca y participa en actividades deportivas")
+Person(admin, "Administrador de Cancha", "Usuario comercial que gestiona canchas y horarios")
+
+System_Ext(gmaps, "Google Maps API", "Servicio de geolocalización y mapas")
+System_Ext(sendgrid, "SendGrid", "Servicio de envío de correos")
+System_Ext(payment, "Pasarela de Pagos", "Procesamiento de pagos de reservas")
+
+System_Boundary(system, "PartidoYA") {
+    Container(web, "Aplicación Web", "Angular", "Entrega la aplicación web estática y el SPA de PartidoYA al navegador")
+    Container(spa, "Single Page Application", "Angular", "Provee toda la funcionalidad de búsqueda de partidos, gestión de perfil y reservas a través del navegador")
+    Container(api, "API Application", "Spring Boot - Java", "Provee la lógica de negocio de PartidoYA a través de una API RESTful")
+    ContainerDb(db, "Base de Datos", "MySQL", "Almacena información de usuarios, partidos, canchas, reservas y suscripciones")
+}
+
+Rel(jugador, web, "Visita partidoya.com usando [HTTPS]")
+Rel(admin, web, "Visita partidoya.com usando [HTTPS]")
+Rel(web, spa, "Entrega al navegador del usuario")
+Rel(jugador, spa, "Busca partidos, gestiona perfil y reservas usando")
+Rel(admin, spa, "Gestiona canchas, horarios y reservas usando")
+Rel(spa, api, "Realiza llamadas API usando [HTTPS / JSON]")
+Rel(api, db, "Lee y escribe datos usando [Spring Data JPA]")
+Rel(api, gmaps, "Consulta ubicaciones y coordenadas usando [HTTPS]")
+Rel(api, sendgrid, "Envía correos de notificación usando [HTTPS]")
+Rel(api, payment, "Procesa pagos de reservas usando [HTTPS]")
+
+@enduml
