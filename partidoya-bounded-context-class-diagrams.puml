@@ -1,0 +1,279 @@
+@startuml "PartidoYA - Class Diagram by Bounded Context"
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+left to right direction
+
+
+package "IAM / Perfil Bounded Context" {
+
+  class Usuario {
+    +id: Long
+    +email: String
+    +estado: EstadoUsuario
+    +rol: RolUsuario
+    +fechaRegistro: DateTime
+    +activarCuenta()
+    +desactivarCuenta()
+  }
+
+  class Credencial {
+    +id: Long
+    +passwordHash: String
+    +ultimoLogin: DateTime
+    +cambiarPassword()
+    +validarPassword()
+  }
+
+  class PerfilUsuario {
+    +id: Long
+    +nombreCompleto: String
+    +telefono: String
+    +fotoPerfilUrl: String
+    +actualizarDatos()
+  }
+
+  class PreferenciaDeportiva {
+    +id: Long
+    +nivel: NivelDeportivo
+    +esPrincipal: Boolean
+  }
+
+  class Deporte {
+    +id: Long
+    +nombre: String
+    +descripcion: String
+  }
+
+  enum RolUsuario {
+    JUGADOR
+    ORGANIZADOR
+    ADMIN_CANCHA
+  }
+
+  enum EstadoUsuario {
+    PENDIENTE
+    ACTIVO
+    BLOQUEADO
+  }
+
+  enum NivelDeportivo {
+    PRINCIPIANTE
+    INTERMEDIO
+    AVANZADO
+  }
+
+  Usuario "1" -- "1" Credencial
+  Usuario "1" -- "1" PerfilUsuario
+  PerfilUsuario "1" -- "0..*" PreferenciaDeportiva
+  PreferenciaDeportiva "*" -- "1" Deporte
+}
+
+package "Partido Bounded Context" {
+
+  class Partido {
+    +id: Long
+    +titulo: String
+    +fecha: Date
+    +horaInicio: Time
+    +horaFin: Time
+    +estado: EstadoPartido
+    +crear()
+    +publicar()
+    +cancelar()
+    +cerrarInscripciones()
+  }
+
+  class Cupo {
+    +limiteJugadores: Integer
+    +vacantesDisponibles: Integer
+    +tomarCupo()
+    +liberarCupo()
+    +estaDisponible(): Boolean
+  }
+
+  class Participacion {
+    +id: Long
+    +fechaInscripcion: DateTime
+    +estado: EstadoParticipacion
+    +confirmar()
+    +cancelar()
+  }
+
+  class UsuarioRef {
+    +usuarioId: Long
+    +nombreVisible: String
+  }
+
+  class DeporteRef {
+    +deporteId: Long
+    +nombre: String
+  }
+
+  class CanchaRef {
+    +canchaId: Long
+    +nombre: String
+    +direccion: String
+  }
+
+  enum EstadoPartido {
+    BORRADOR
+    ABIERTO
+    COMPLETO
+    CANCELADO
+    FINALIZADO
+  }
+
+  enum EstadoParticipacion {
+    CONFIRMADA
+    CANCELADA
+    EN_ESPERA
+  }
+
+  Partido "1" *-- "1" Cupo
+  Partido "1" *-- "0..*" Participacion
+  Partido "1" --> "1" UsuarioRef : organizador
+  Partido "1" --> "1" DeporteRef
+  Partido "1" --> "1" CanchaRef
+  Participacion "*" --> "1" UsuarioRef : jugador
+}
+
+package "Reserva Bounded Context" {
+
+  class Cancha {
+    +id: Long
+    +nombre: String
+    +direccion: String
+    +distrito: String
+    +precioPorHora: Decimal
+    +estado: EstadoCancha
+    +actualizarDatos()
+    +deshabilitar()
+  }
+
+  class HorarioDisponible {
+    +id: Long
+    +diaSemana: String
+    +horaInicio: Time
+    +horaFin: Time
+    +estaDisponible: Boolean
+  }
+
+  class Reserva {
+    +id: Long
+    +fecha: Date
+    +horaInicio: Time
+    +horaFin: Time
+    +estado: EstadoReserva
+    +confirmar()
+    +cancelar()
+    +validarDisponibilidad()
+  }
+
+  class BloqueoHorario {
+    +id: Long
+    +fecha: Date
+    +horaInicio: Time
+    +horaFin: Time
+    +motivo: String
+    +activarBloqueo()
+  }
+
+  class AdministradorCanchaRef {
+    +usuarioId: Long
+    +nombre: String
+  }
+
+  class PartidoRef {
+    +partidoId: Long
+    +titulo: String
+  }
+
+  enum EstadoCancha {
+    ACTIVA
+    INACTIVA
+    MANTENIMIENTO
+  }
+
+  enum EstadoReserva {
+    PENDIENTE
+    CONFIRMADA
+    CANCELADA
+    VENCIDA
+  }
+
+  Cancha "1" -- "1" AdministradorCanchaRef
+  Cancha "1" *-- "0..*" HorarioDisponible
+  Cancha "1" *-- "0..*" BloqueoHorario
+  Cancha "1" -- "0..*" Reserva
+  Reserva "*" --> "1" PartidoRef
+}
+
+package "Suscripción Bounded Context" {
+
+  class PlanSuscripcion {
+    +id: Long
+    +nombre: String
+    +descripcion: String
+    +precio: Decimal
+    +duracionDias: Integer
+    +limitePartidos: Integer
+    +crearPlan()
+    +actualizarPlan()
+  }
+
+  class Suscripcion {
+    +id: Long
+    +fechaInicio: Date
+    +fechaFin: Date
+    +estado: EstadoSuscripcion
+    +activar()
+    +cancelar()
+    +renovar()
+  }
+
+  class Pago {
+    +id: Long
+    +monto: Decimal
+    +fechaPago: DateTime
+    +metodo: MetodoPago
+    +estado: EstadoPago
+    +registrarPago()
+    +confirmarPago()
+  }
+
+  class UsuarioSuscriptorRef {
+    +usuarioId: Long
+    +email: String
+  }
+
+  enum EstadoSuscripcion {
+    ACTIVA
+    VENCIDA
+    CANCELADA
+    PENDIENTE_PAGO
+  }
+
+  enum MetodoPago {
+    TARJETA
+    YAPE
+    PLIN
+    TRANSFERENCIA
+  }
+
+  enum EstadoPago {
+    PENDIENTE
+    APROBADO
+    RECHAZADO
+    REEMBOLSADO
+  }
+
+  UsuarioSuscriptorRef "1" -- "0..*" Suscripcion
+  Suscripcion "*" --> "1" PlanSuscripcion
+  Suscripcion "1" *-- "0..*" Pago
+}
+
+
+@enduml
