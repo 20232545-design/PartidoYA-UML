@@ -1,0 +1,124 @@
+```plantuml
+@startuml "Diagrama conceptual - PartidoYA"
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
+
+title Diagrama conceptual de PartidoYA
+
+class Usuario {
+  idUsuario
+  nombreCompleto
+  correoElectronico
+  telefono
+  contraseñaCifrada
+  rol
+  estadoCuenta
+}
+
+class Perfil {
+  idPerfil
+  fotoPerfil
+  descripcion
+  nivelGeneral
+}
+
+class Deporte {
+  idDeporte
+  nombre
+  categoria
+}
+
+class PreferenciaDeportiva {
+  idPreferencia
+  nivel
+  disponibilidad
+  distanciaMaxima
+}
+
+class Partido {
+  idPartido
+  fecha
+  hora
+  ubicacion
+  cuposMaximos
+  cuposDisponibles
+  estado
+}
+
+class Cancha {
+  idCancha
+  nombre
+  direccion
+  distrito
+  capacidad
+  estado
+}
+
+class Participacion {
+  idParticipacion
+  estado
+  fechaConfirmacion
+}
+
+class Calificacion {
+  idCalificacion
+  puntaje
+  comentario
+  fechaCalificacion
+}
+
+class PlanSuscripcion {
+  idPlan
+  nombrePlan
+  precioMensual
+  tipoUsuario
+  beneficios
+}
+
+class Suscripcion {
+  idSuscripcion
+  fechaInicio
+  fechaFin
+  estadoSuscripcion
+}
+
+class Pago {
+  idPago
+  monto
+  metodoPago
+  estadoPago
+  fechaPago
+}
+
+class Notificacion {
+  idNotificacion
+  tipo
+  mensaje
+  estado
+  fechaEnvio
+}
+
+Usuario "1" -- "1" Perfil : posee
+Usuario "1" -- "0..*" PreferenciaDeportiva : configura
+PreferenciaDeportiva "*" -- "1" Deporte : corresponde a
+
+Usuario "1" -- "0..*" Partido : crea
+Partido "*" -- "1" Deporte : pertenece a
+Partido "*" -- "0..1" Cancha : se realiza en
+
+Usuario "1" -- "0..*" Participacion : registra
+Partido "1" -- "0..*" Participacion : contiene
+
+Usuario "1" -- "0..*" Calificacion : emite/recibe
+Partido "1" -- "0..*" Calificacion : genera
+
+Usuario "1" -- "0..*" Notificacion : recibe
+
+Usuario "1" -- "0..*" Suscripcion : contrata
+Suscripcion "*" -- "1" PlanSuscripcion : pertenece a
+Suscripcion "1" -- "0..*" Pago : genera
+
+@enduml
+```
