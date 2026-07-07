@@ -1,0 +1,107 @@
+@startuml "Diagrama de Componentes UML - PartidoYA"
+
+skinparam componentStyle uml2
+skinparam linetype ortho
+left to right direction
+
+title Diagrama de Componentes UML - PartidoYA\nArquitectura: Monolito Modular
+
+interface "API Contract\nREST/JSON" as Contract
+
+component "Web App Responsive\nPartidoYA" as WebApp
+
+component "Backend Application\nMonolito Modular" as Backend {
+
+  component "Perfil / IAM Module" as M_Perfil {
+    component "Interface Layer" as P_Interface
+    component "Application Layer" as P_Application
+    component "Domain Layer" as P_Domain
+    component "Infrastructure Layer" as P_Infrastructure
+  }
+
+  component "Partido Module" as M_Partido {
+    component "Interface Layer" as PA_Interface
+    component "Application Layer" as PA_Application
+    component "Domain Layer" as PA_Domain
+    component "Infrastructure Layer" as PA_Infrastructure
+  }
+
+  component "Reserva Module" as M_Reserva {
+    component "Interface Layer" as R_Interface
+    component "Application Layer" as R_Application
+    component "Domain Layer" as R_Domain
+    component "Infrastructure Layer" as R_Infrastructure
+  }
+
+  component "Suscripción Module" as M_Suscripcion {
+    component "Interface Layer" as S_Interface
+    component "Application Layer" as S_Application
+    component "Domain Layer" as S_Domain
+    component "Infrastructure Layer" as S_Infrastructure
+  }
+
+  component "Notificación Module" as M_Notificacion {
+    component "Interface Layer" as N_Interface
+    component "Application Layer" as N_Application
+    component "Domain Layer" as N_Domain
+    component "Infrastructure Layer" as N_Infrastructure
+  }
+
+  component "Shared Kernel" as Shared
+}
+
+database "MySQL Database" as MySQL <<external>>
+component "JWT Auth Provider" as JWT <<external>>
+component "Google Maps API" as GoogleMaps <<external>>
+component "Culqi Payment Gateway" as Culqi <<external>>
+component "SendGrid" as SendGrid <<external>>
+
+WebApp --> Contract
+Backend --> Contract
+
+P_Interface ..> P_Application
+P_Application ..> P_Domain
+P_Application ..> P_Infrastructure
+
+PA_Interface ..> PA_Application
+PA_Application ..> PA_Domain
+PA_Application ..> PA_Infrastructure
+
+R_Interface ..> R_Application
+R_Application ..> R_Domain
+R_Application ..> R_Infrastructure
+
+S_Interface ..> S_Application
+S_Application ..> S_Domain
+S_Application ..> S_Infrastructure
+
+N_Interface ..> N_Application
+N_Application ..> N_Domain
+N_Application ..> N_Infrastructure
+
+M_Perfil ..> Shared
+M_Partido ..> Shared
+M_Reserva ..> Shared
+M_Suscripcion ..> Shared
+M_Notificacion ..> Shared
+
+PA_Application ..> P_Application : valida usuario
+R_Application ..> P_Application : valida usuario
+R_Application ..> PA_Application : consulta partido
+S_Application ..> P_Application : valida cuenta
+N_Application ..> P_Application : obtiene contacto
+
+P_Infrastructure ..> MySQL
+PA_Infrastructure ..> MySQL
+R_Infrastructure ..> MySQL
+S_Infrastructure ..> MySQL
+N_Infrastructure ..> MySQL
+
+P_Infrastructure ..> JWT
+PA_Infrastructure ..> GoogleMaps
+R_Infrastructure ..> GoogleMaps
+R_Infrastructure ..> Culqi
+S_Infrastructure ..> Culqi
+N_Infrastructure ..> SendGrid
+
+@enduml
