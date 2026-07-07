@@ -1,108 +1,107 @@
-@startuml "PartidoYA - Deployment Diagram"
+@startuml "Diagrama de Componentes UML - PartidoYA"
 
+skinparam componentStyle uml2
 skinparam linetype ortho
-skinparam shadowing false
-skinparam componentStyle rectangle
+left to right direction
 
-title PartidoYA - Deployment Diagram\nArquitectura
+title Diagrama de Componentes UML - PartidoYA\nArquitectura
 
-node "Browser\nMobile / Tablet / Desktop" as Browser
+interface "API Contract\nREST/JSON" as Contract
 
-node "CDN / Web Hosting" as CDN
+component "Web App Responsive\nPartidoYA" as WebApp
 
-node "PartidoYA Frontend Hosting" as FrontendHosting {
-  artifact "Angular SPA\nPartidoYA Web App" as AngularSPA
-  artifact "Landing Page\nHTML / CSS / JS" as LandingPage
-}
+component "Backend Application\nMonolito Modular" as Backend {
 
-node "API Gateway / Reverse Proxy" as ApiGateway
-
-node "AWS ECS\nPartidoYA Backend Service" as BackendNode {
-  artifact "PartidoYABackendMonolith.jar\nMonolito Modular" as BackendArtifact {
-
-    component "Perfil / IAM Module" as PerfilModule {
-      component "Interface\nREST Controllers" as PerfilInterface
-      component "Application Service" as PerfilApplicationService
-      component "Domain Model" as PerfilDomainModel
-      component "Infrastructure\nJWT / Persistence" as PerfilInfrastructure
-    }
-
-    component "Partido Module" as PartidoModule {
-      component "Interface\nREST Controllers" as PartidoInterface
-      component "Application Service" as PartidoApplicationService
-      component "Domain Model" as PartidoDomainModel
-      component "Infrastructure\nRepositories / Maps Client" as PartidoInfrastructure
-    }
-
-    component "Reserva Module" as ReservaModule {
-      component "Interface\nREST Controllers" as ReservaInterface
-      component "Application Service" as ReservaApplicationService
-      component "Domain Model" as ReservaDomainModel
-      component "Infrastructure\nPersistence / Maps Client" as ReservaInfrastructure
-    }
-
-    component "Suscripcion Module" as SuscripcionModule {
-      component "Interface\nREST Controllers" as SuscripcionInterface
-      component "Application Service" as SuscripcionApplicationService
-      component "Domain Model" as SuscripcionDomainModel
-      component "Infrastructure\nPayment Client / Persistence" as SuscripcionInfrastructure
-    }
-
-    component "Notification Module" as NotificationModule {
-      component "Interface\nInternal Notification API" as NotificationInterface
-      component "Application Service" as NotificationApplicationService
-      component "Domain Model" as NotificationDomainModel
-      component "Infrastructure\nEmail Client" as NotificationInfrastructure
-    }
+  component "Perfil / IAM Module" as M_Perfil {
+    component "Interface Layer" as P_Interface
+    component "Application Layer" as P_Application
+    component "Domain Layer" as P_Domain
+    component "Infrastructure Layer" as P_Infrastructure
   }
+
+  component "Partido Module" as M_Partido {
+    component "Interface Layer" as PA_Interface
+    component "Application Layer" as PA_Application
+    component "Domain Layer" as PA_Domain
+    component "Infrastructure Layer" as PA_Infrastructure
+  }
+
+  component "Reserva Module" as M_Reserva {
+    component "Interface Layer" as R_Interface
+    component "Application Layer" as R_Application
+    component "Domain Layer" as R_Domain
+    component "Infrastructure Layer" as R_Infrastructure
+  }
+
+  component "Suscripción Module" as M_Suscripcion {
+    component "Interface Layer" as S_Interface
+    component "Application Layer" as S_Application
+    component "Domain Layer" as S_Domain
+    component "Infrastructure Layer" as S_Infrastructure
+  }
+
+  component "Notificación Module" as M_Notificacion {
+    component "Interface Layer" as N_Interface
+    component "Application Layer" as N_Application
+    component "Domain Layer" as N_Domain
+    component "Infrastructure Layer" as N_Infrastructure
+  }
+
+  component "Shared Kernel" as Shared
 }
 
-database "MySQL Database\nPartidoYA_DB" as PartidoYADatabase
+database "MySQL Database" as MySQL <<external>>
+component "JWT Auth Provider" as JWT <<external>>
+component "Google Maps API" as GoogleMaps <<external>>
+component "Culqi Payment Gateway" as Culqi <<external>>
+component "SendGrid" as SendGrid <<external>>
 
-cloud "Google Maps API\nMapas y Geolocalización" as GoogleMaps
-cloud "SendGrid\nCorreos y Notificaciones" as SendGrid
-cloud "Payment Gateway\nCulqi / Pagos" as PaymentGateway
+WebApp --> Contract
+Backend --> Contract
 
-Browser --> CDN : HTTPS
-CDN --> FrontendHosting : HTTPS
-Browser --> ApiGateway : HTTPS / JSON
+P_Interface ..> P_Application
+P_Application ..> P_Domain
+P_Application ..> P_Infrastructure
 
-ApiGateway --> BackendNode : HTTPS / REST
+PA_Interface ..> PA_Application
+PA_Application ..> PA_Domain
+PA_Application ..> PA_Infrastructure
 
-BackendNode --> PartidoYADatabase : TCP/IP 3306
+R_Interface ..> R_Application
+R_Application ..> R_Domain
+R_Application ..> R_Infrastructure
 
-BackendNode --> GoogleMaps : HTTPS
-BackendNode --> SendGrid : HTTPS
-BackendNode --> PaymentGateway : HTTPS
+S_Interface ..> S_Application
+S_Application ..> S_Domain
+S_Application ..> S_Infrastructure
 
-PerfilModule ..> NotificationModule : solicitud interna\ncorreo de verificación
-PartidoModule ..> NotificationModule : solicitud interna\navisos de partido
-ReservaModule ..> NotificationModule : solicitud interna\nconfirmación de reserva
-SuscripcionModule ..> NotificationModule : solicitud interna\nconfirmación de pago
+N_Interface ..> N_Application
+N_Application ..> N_Domain
+N_Application ..> N_Infrastructure
 
-PerfilInfrastructure ..> PartidoYADatabase
-PartidoInfrastructure ..> PartidoYADatabase
-ReservaInfrastructure ..> PartidoYADatabase
-SuscripcionInfrastructure ..> PartidoYADatabase
-NotificationInfrastructure ..> PartidoYADatabase
+M_Perfil ..> Shared
+M_Partido ..> Shared
+M_Reserva ..> Shared
+M_Suscripcion ..> Shared
+M_Notificacion ..> Shared
 
-PartidoInfrastructure ..> GoogleMaps
-ReservaInfrastructure ..> GoogleMaps
-NotificationInfrastructure ..> SendGrid
-SuscripcionInfrastructure ..> PaymentGateway
+PA_Application ..> P_Application : valida usuario
+R_Application ..> P_Application : valida usuario
+R_Application ..> PA_Application : consulta partido
+S_Application ..> P_Application : valida cuenta
+N_Application ..> P_Application : obtiene contacto
 
+P_Infrastructure ..> MySQL
+PA_Infrastructure ..> MySQL
+R_Infrastructure ..> MySQL
+S_Infrastructure ..> MySQL
+N_Infrastructure ..> MySQL
 
-note bottom of PartidoYADatabase
-Almacena usuarios, perfiles, deportes,
-preferencias deportivas, canchas, partidos,
-participaciones, reservas, pagos,
-calificaciones, reportes y notificaciones.
-end note
-
-note right of ApiGateway
-Centraliza las solicitudes del frontend
-y las envía hacia el único backend
-del sistema.
-end note
+P_Infrastructure ..> JWT
+PA_Infrastructure ..> GoogleMaps
+R_Infrastructure ..> GoogleMaps
+R_Infrastructure ..> Culqi
+S_Infrastructure ..> Culqi
+N_Infrastructure ..> SendGrid
 
 @enduml
