@@ -4,7 +4,7 @@ skinparam componentStyle uml2
 skinparam linetype ortho
 left to right direction
 
-title Diagrama de Componentes UML - PartidoYA\nArquitectura: Monolito Modular
+title Diagrama de Componentes UML - PartidoYA\nArquitectura
 
 interface "API Contract\nREST/JSON" as Contract
 
