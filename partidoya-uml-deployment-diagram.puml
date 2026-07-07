@@ -1,59 +1,59 @@
 @startuml "PartidoYA - Deployment Diagram"
+
 skinparam linetype ortho
 skinparam shadowing false
 skinparam componentStyle rectangle
 
+title PartidoYA - Deployment Diagram
+
 node "Browser\nMobile / Tablet / Desktop" as Browser
+
 node "CDN / Web Hosting" as CDN
-node "API Gateway" as ApiGateway
 
 node "PartidoYA Frontend Hosting" as FrontendHosting {
   artifact "Angular SPA\nPartidoYA Web App" as AngularSPA
   artifact "Landing Page\nHTML / CSS / JS" as LandingPage
 }
 
-node "Perfil / IAM AWS ECS" as PerfilContainer {
-  artifact "PerfilIAMMicroserviceJAR" {
-    component "Interface\nREST Controllers" as PerfilInterface
-    component "Application Service" as PerfilApplicationService
-    component "Domain Model" as PerfilDomainModel
-    component "Infrastructure\nJWT / Persistence" as PerfilInfrastructure
-  }
-}
+node "API Gateway / Reverse Proxy" as ApiGateway
 
-node "Partido AWS ECS" as PartidoContainer {
-  artifact "PartidoMicroserviceJAR" {
-    component "Interface\nREST Controllers" as PartidoInterface
-    component "Application Service" as PartidoApplicationService
-    component "Domain Model" as PartidoDomainModel
-    component "Infrastructure\nRepositories / Maps Client" as PartidoInfrastructure
-  }
-}
+node "AWS ECS\nPartidoYA Backend Service" as BackendNode {
+  artifact "PartidoYABackendMonolith.jar\nMonolito Modular" as BackendArtifact {
 
-node "Reserva AWS ECS" as ReservaContainer {
-  artifact "ReservaMicroserviceJAR" {
-    component "Interface\nREST Controllers" as ReservaInterface
-    component "Application Service" as ReservaApplicationService
-    component "Domain Model" as ReservaDomainModel
-    component "Infrastructure\nPersistence" as ReservaInfrastructure
-  }
-}
+    component "Perfil / IAM Module" as PerfilModule {
+      component "Interface\nREST Controllers" as PerfilInterface
+      component "Application Service" as PerfilApplicationService
+      component "Domain Model" as PerfilDomainModel
+      component "Infrastructure\nJWT / Persistence" as PerfilInfrastructure
+    }
 
-node "Suscripcion AWS ECS" as SuscripcionContainer {
-  artifact "SuscripcionMicroserviceJAR" {
-    component "Interface\nREST Controllers" as SuscripcionInterface
-    component "Application Service" as SuscripcionApplicationService
-    component "Domain Model" as SuscripcionDomainModel
-    component "Infrastructure\nPayment Client / Persistence" as SuscripcionInfrastructure
-  }
-}
+    component "Partido Module" as PartidoModule {
+      component "Interface\nREST Controllers" as PartidoInterface
+      component "Application Service" as PartidoApplicationService
+      component "Domain Model" as PartidoDomainModel
+      component "Infrastructure\nRepositories / Maps Client" as PartidoInfrastructure
+    }
 
-node "Notification AWS ECS" as NotificationContainer {
-  artifact "NotificationMicroserviceJAR" {
-    component "Interface\nREST Controllers" as NotificationInterface
-    component "Application Service" as NotificationApplicationService
-    component "Domain Model" as NotificationDomainModel
-    component "Infrastructure\nEmail Client" as NotificationInfrastructure
+    component "Reserva Module" as ReservaModule {
+      component "Interface\nREST Controllers" as ReservaInterface
+      component "Application Service" as ReservaApplicationService
+      component "Domain Model" as ReservaDomainModel
+      component "Infrastructure\nPersistence / Maps Client" as ReservaInfrastructure
+    }
+
+    component "Suscripcion Module" as SuscripcionModule {
+      component "Interface\nREST Controllers" as SuscripcionInterface
+      component "Application Service" as SuscripcionApplicationService
+      component "Domain Model" as SuscripcionDomainModel
+      component "Infrastructure\nPayment Client / Persistence" as SuscripcionInfrastructure
+    }
+
+    component "Notification Module" as NotificationModule {
+      component "Interface\nInternal Notification API" as NotificationInterface
+      component "Application Service" as NotificationApplicationService
+      component "Domain Model" as NotificationDomainModel
+      component "Infrastructure\nEmail Client" as NotificationInfrastructure
+    }
   }
 }
 
@@ -61,33 +61,36 @@ database "MySQL Database\nPartidoYA_DB" as PartidoYADatabase
 
 cloud "Google Maps API\nMapas y Geolocalización" as GoogleMaps
 cloud "SendGrid\nCorreos y Notificaciones" as SendGrid
-cloud "Payment Gateway\nPagos de Suscripciones" as PaymentGateway
+cloud "Payment Gateway\nCulqi / Pagos" as PaymentGateway
 
 Browser --> CDN : HTTPS
 CDN --> FrontendHosting : HTTPS
 Browser --> ApiGateway : HTTPS / JSON
 
-ApiGateway --> PerfilContainer : HTTPS
-ApiGateway --> PartidoContainer : HTTPS
-ApiGateway --> ReservaContainer : HTTPS
-ApiGateway --> SuscripcionContainer : HTTPS
-ApiGateway --> NotificationContainer : HTTPS
+ApiGateway --> BackendNode : HTTPS / REST
 
-PerfilContainer --> PartidoYADatabase : TCP/IP 3306
-PartidoContainer --> PartidoYADatabase : TCP/IP 3306
-ReservaContainer --> PartidoYADatabase : TCP/IP 3306
-SuscripcionContainer --> PartidoYADatabase : TCP/IP 3306
-NotificationContainer --> PartidoYADatabase : TCP/IP 3306
+BackendNode --> PartidoYADatabase : TCP/IP 3306
 
-PartidoContainer --> GoogleMaps : HTTPS
-ReservaContainer --> GoogleMaps : HTTPS
-NotificationContainer --> SendGrid : HTTPS
-SuscripcionContainer --> PaymentGateway : HTTPS
+BackendNode --> GoogleMaps : HTTPS
+BackendNode --> SendGrid : HTTPS
+BackendNode --> PaymentGateway : HTTPS
 
-PerfilContainer --> NotificationContainer : HTTPS\nCorreo de verificación
-PartidoContainer --> NotificationContainer : HTTPS\nAvisos de partido
-ReservaContainer --> NotificationContainer : HTTPS\nConfirmación de reserva
-SuscripcionContainer --> NotificationContainer : HTTPS\nConfirmación de pago
+PerfilModule ..> NotificationModule : solicitud interna\ncorreo de verificación
+PartidoModule ..> NotificationModule : solicitud interna\navisos de partido
+ReservaModule ..> NotificationModule : solicitud interna\nconfirmación de reserva
+SuscripcionModule ..> NotificationModule : solicitud interna\nconfirmación de pago
+
+PerfilInfrastructure ..> PartidoYADatabase
+PartidoInfrastructure ..> PartidoYADatabase
+ReservaInfrastructure ..> PartidoYADatabase
+SuscripcionInfrastructure ..> PartidoYADatabase
+NotificationInfrastructure ..> PartidoYADatabase
+
+PartidoInfrastructure ..> GoogleMaps
+ReservaInfrastructure ..> GoogleMaps
+NotificationInfrastructure ..> SendGrid
+SuscripcionInfrastructure ..> PaymentGateway
+
 
 note bottom of PartidoYADatabase
 Almacena usuarios, perfiles, deportes,
@@ -98,8 +101,8 @@ end note
 
 note right of ApiGateway
 Centraliza las solicitudes del frontend
-y enruta las peticiones hacia los
-servicios del backend.
+y las envía hacia el único backend
+del sistema.
 end note
 
 @enduml
