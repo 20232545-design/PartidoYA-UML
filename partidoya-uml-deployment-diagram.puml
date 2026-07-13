@@ -6,91 +6,81 @@ skinparam componentStyle rectangle
 
 title PartidoYA - Deployment Diagram
 
-node "Browser\nMobile / Tablet / Desktop" as Browser
-
-node "CDN / Web Hosting" as CDN
-
-node "PartidoYA Frontend Hosting" as FrontendHosting {
+node "Browser\nMobile / Tablet / Desktop" as Browser {
   artifact "Angular SPA\nPartidoYA Web App" as AngularSPA
+}
+
+node "Landing Page\nCDN / Web Hosting" as LandingNode {
   artifact "Landing Page\nHTML / CSS / JS" as LandingPage
 }
 
-node "API Gateway / Reverse Proxy" as ApiGateway
-
 node "AWS ECS\nPartidoYA Backend Service" as BackendNode {
+
   artifact "PartidoYABackendMonolith.jar\nMonolito Modular" as BackendArtifact {
 
-    component "Perfil / IAM Module" as PerfilModule {
+    component "Perfil / IAM\nBounded Context" as PerfilContext {
       component "Interface\nREST Controllers" as PerfilInterface
       component "Application Service" as PerfilApplicationService
       component "Domain Model" as PerfilDomainModel
       component "Infrastructure\nJWT / Persistence" as PerfilInfrastructure
     }
 
-    component "Partido Module" as PartidoModule {
+    component "Partido\nBounded Context" as PartidoContext {
       component "Interface\nREST Controllers" as PartidoInterface
       component "Application Service" as PartidoApplicationService
       component "Domain Model" as PartidoDomainModel
       component "Infrastructure\nRepositories / Maps Client" as PartidoInfrastructure
     }
 
-    component "Reserva Module" as ReservaModule {
+    component "Reserva\nBounded Context" as ReservaContext {
       component "Interface\nREST Controllers" as ReservaInterface
       component "Application Service" as ReservaApplicationService
       component "Domain Model" as ReservaDomainModel
       component "Infrastructure\nPersistence / Maps Client" as ReservaInfrastructure
     }
 
-    component "Suscripcion Module" as SuscripcionModule {
+    component "Suscripción\nBounded Context" as SuscripcionContext {
       component "Interface\nREST Controllers" as SuscripcionInterface
       component "Application Service" as SuscripcionApplicationService
       component "Domain Model" as SuscripcionDomainModel
       component "Infrastructure\nPayment Client / Persistence" as SuscripcionInfrastructure
     }
 
-    component "Notification Module" as NotificationModule {
-      component "Interface\nInternal Notification API" as NotificationInterface
+    component "Notificaciones\nBounded Context" as NotificationContext {
+      component "Interface\nInternal Notification Port" as NotificationInterface
       component "Application Service" as NotificationApplicationService
       component "Domain Model" as NotificationDomainModel
-      component "Infrastructure\nEmail Client" as NotificationInfrastructure
+      component "Infrastructure\nEmail Client / Persistence" as NotificationInfrastructure
     }
   }
 }
 
 database "MySQL Database\nPartidoYA_DB" as PartidoYADatabase
 
-cloud "Google Maps API\nMapas y Geolocalización" as GoogleMaps
-cloud "SendGrid\nCorreos y Notificaciones" as SendGrid
-cloud "Payment Gateway\nCulqi / Pagos" as PaymentGateway
+cloud "Google Maps API\nMapas y geolocalización" as GoogleMaps
+cloud "SendGrid\nCorreos y notificaciones" as SendGrid
+cloud "Culqi\nPasarela de pagos" as PaymentGateway
 
-Browser --> CDN : HTTPS
-CDN --> FrontendHosting : HTTPS
-Browser --> ApiGateway : HTTPS / JSON
-
-ApiGateway --> BackendNode : HTTPS / REST
+Browser --> LandingNode : HTTPS
+Browser --> BackendNode : HTTPS / REST / JSON
 
 BackendNode --> PartidoYADatabase : TCP/IP 3306
 
-BackendNode --> GoogleMaps : HTTPS
-BackendNode --> SendGrid : HTTPS
-BackendNode --> PaymentGateway : HTTPS
+PerfilContext ..> NotificationContext : solicitud interna\ncorreo de verificación
+PartidoContext ..> NotificationContext : solicitud interna\navisos de partido
+ReservaContext ..> NotificationContext : solicitud interna\nconfirmación de reserva
+SuscripcionContext ..> NotificationContext : solicitud interna\nconfirmación de pago
 
-PerfilModule ..> NotificationModule : solicitud interna\ncorreo de verificación
-PartidoModule ..> NotificationModule : solicitud interna\navisos de partido
-ReservaModule ..> NotificationModule : solicitud interna\nconfirmación de reserva
-SuscripcionModule ..> NotificationModule : solicitud interna\nconfirmación de pago
+PerfilInfrastructure ..> PartidoYADatabase : persistencia
+PartidoInfrastructure ..> PartidoYADatabase : persistencia
+ReservaInfrastructure ..> PartidoYADatabase : persistencia
+SuscripcionInfrastructure ..> PartidoYADatabase : persistencia
+NotificationInfrastructure ..> PartidoYADatabase : persistencia
 
-PerfilInfrastructure ..> PartidoYADatabase
-PartidoInfrastructure ..> PartidoYADatabase
-ReservaInfrastructure ..> PartidoYADatabase
-SuscripcionInfrastructure ..> PartidoYADatabase
-NotificationInfrastructure ..> PartidoYADatabase
-
-PartidoInfrastructure ..> GoogleMaps
-ReservaInfrastructure ..> GoogleMaps
-NotificationInfrastructure ..> SendGrid
-SuscripcionInfrastructure ..> PaymentGateway
-
+PartidoInfrastructure ..> GoogleMaps : HTTPS
+ReservaInfrastructure ..> GoogleMaps : HTTPS
+NotificationInfrastructure ..> SendGrid : HTTPS
+SuscripcionInfrastructure ..> PaymentGateway : HTTPS
 
 note bottom of PartidoYADatabase
 Almacena usuarios, perfiles, deportes,
@@ -99,10 +89,16 @@ participaciones, reservas, pagos,
 calificaciones, reportes y notificaciones.
 end note
 
-note right of ApiGateway
-Centraliza las solicitudes del frontend
-y las envía hacia el único backend
-del sistema.
+note right of BackendNode
+El backend se despliega como un único
+monolito modular. Su estructura interna
+se divide mediante bounded contexts.
+end note
+
+note right of NotificationContext
+La comunicación con este bounded context
+se realiza internamente dentro del monolito,
+sin exponer un microservicio independiente.
 end note
 
 @enduml
