@@ -1,165 +1,268 @@
 @startuml
-title Diagrama UML de Base de Datos - PartidoYA
+title Diagrama UML de Base de Datos - PartidoYA (Corregido)
 
 hide methods
 skinparam classAttributeIconSize 0
 
+' ==================== ENUMERACIONES ====================
+enum RolUsuario {
+  JUGADOR
+  ADMIN_CANCHA
+}
+
+enum EstadoUsuario {
+  ACTIVO
+  SUSPENDIDO
+  ELIMINADO
+}
+
+enum NivelJugador {
+  PRINCIPIANTE
+  INTERMEDIO
+  AVANZADO
+}
+
+enum DiaSemana {
+  LUN
+  MAR
+  MIE
+  JUE
+  VIE
+  SAB
+  DOM
+}
+
+enum NivelPartido {
+  PRINCIPIANTE
+  INTERMEDIO
+  AVANZADO
+  MIXTO
+}
+
+enum EstadoPartido {
+  ABIERTO
+  LLENO
+  CANCELADO
+  FINALIZADO
+}
+
+enum EstadoParticipacion {
+  CONFIRMADA
+  CANCELADA
+  ASISTIO
+  NO_ASISTIO
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+}
+
+enum MetodoPago {
+  YAPE
+  PLIN
+  TARJETA
+  EFECTIVO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  RECHAZADO
+  DEVUELTO
+}
+
+enum EstadoReporte {
+  PENDIENTE
+  REVISADO
+  DESCARTADO
+}
+
+enum TipoNotificacion {
+  PARTIDO
+  RESERVA
+  PAGO
+  SISTEMA
+}
+
+' ==================== CLASES ====================
 class Usuario <<table>> {
-  +id_usuario: BIGINT <<PK>>
-  nombre: VARCHAR(100)
-  apellido: VARCHAR(100)
-  correo: VARCHAR(150) <<UNIQUE>>
-  password_hash: VARCHAR(255)
-  telefono: VARCHAR(20)
-  foto_perfil_url: VARCHAR(255)
-  rol: ENUM('JUGADOR','ADMIN_CANCHA')
-  correo_verificado: BOOLEAN
-  estado: ENUM('ACTIVO','SUSPENDIDO','ELIMINADO')
-  fecha_registro: DATETIME
+  +id_usuario: BIGINT {PK}
+  -nombre: VARCHAR(100)
+  -apellido: VARCHAR(100)
+  -correo: VARCHAR(150) {unique}
+  -password_hash: VARCHAR(255)
+  -telefono: VARCHAR(20)
+  -foto_perfil_url: VARCHAR(255)
+  -rol: RolUsuario
+  -correo_verificado: BOOLEAN
+  -estado: EstadoUsuario
+  -fecha_registro: DATETIME
 }
 
 class Deporte <<table>> {
-  +id_deporte: BIGINT <<PK>>
-  nombre: VARCHAR(80)
-  descripcion: VARCHAR(255)
-  estado: BOOLEAN
+  +id_deporte: BIGINT {PK}
+  -nombre: VARCHAR(80)
+  -descripcion: VARCHAR(255)
+  -estado: BOOLEAN
 }
 
 class PreferenciaDeportiva <<table>> {
-  +id_preferencia: BIGINT <<PK>>
-  id_usuario: BIGINT <<FK>>
-  id_deporte: BIGINT <<FK>>
-  nivel: ENUM('PRINCIPIANTE','INTERMEDIO','AVANZADO')
-  es_favorito: BOOLEAN
+  +id_preferencia: BIGINT {PK}
+  -id_usuario: BIGINT {FK}
+  -id_deporte: BIGINT {FK}
+  -nivel: NivelJugador
+  -es_favorito: BOOLEAN
 }
 
 class Cancha <<table>> {
-  +id_cancha: BIGINT <<PK>>
-  id_administrador: BIGINT <<FK>>
-  nombre: VARCHAR(120)
-  direccion: VARCHAR(255)
-  distrito: VARCHAR(100)
-  latitud: DECIMAL(10,8)
-  longitud: DECIMAL(11,8)
-  precio_hora: DECIMAL(10,2)
-  estado: ENUM('ACTIVA','INACTIVA')
+  +id_cancha: BIGINT {PK}
+  -id_administrador: BIGINT {FK}
+  -nombre: VARCHAR(120)
+  -direccion: VARCHAR(255)
+  -distrito: VARCHAR(100)
+  -latitud: DECIMAL(10,8)
+  -longitud: DECIMAL(11,8)
+  -precio_hora: DECIMAL(10,2)
+  -estado: ENUM('ACTIVA','INACTIVA')
 }
 
 class HorarioCancha <<table>> {
-  +id_horario: BIGINT <<PK>>
-  id_cancha: BIGINT <<FK>>
-  dia_semana: ENUM('LUN','MAR','MIE','JUE','VIE','SAB','DOM')
-  hora_inicio: TIME
-  hora_fin: TIME
-  disponible: BOOLEAN
+  +id_horario: BIGINT {PK}
+  -id_cancha: BIGINT {FK}
+  -dia_semana: DiaSemana
+  -hora_inicio: TIME
+  -hora_fin: TIME
+  -disponible: BOOLEAN
 }
 
 class Partido <<table>> {
-  +id_partido: BIGINT <<PK>>
-  id_deporte: BIGINT <<FK>>
-  id_cancha: BIGINT <<FK>>
-  id_organizador: BIGINT <<FK>>
-  titulo: VARCHAR(120)
-  descripcion: VARCHAR(255)
-  fecha: DATE
-  hora_inicio: TIME
-  hora_fin: TIME
-  direccion_referencia: VARCHAR(255)
-  cupos_totales: INT
-  cupos_disponibles: INT
-  nivel_requerido: ENUM('PRINCIPIANTE','INTERMEDIO','AVANZADO','MIXTO')
-  estado: ENUM('ABIERTO','LLENO','CANCELADO','FINALIZADO')
-  fecha_creacion: DATETIME
+  +id_partido: BIGINT {PK}
+  -id_deporte: BIGINT {FK}
+  -id_cancha: BIGINT {FK}
+  -id_organizador: BIGINT {FK}
+  -titulo: VARCHAR(120)
+  -descripcion: VARCHAR(255)
+  -fecha: DATE
+  -hora_inicio: TIME
+  -hora_fin: TIME
+  -direccion_referencia: VARCHAR(255)
+  -cupos_totales: INT
+  -cupos_disponibles: INT
+  -nivel_requerido: NivelPartido
+  -estado: EstadoPartido
+  -fecha_creacion: DATETIME
 }
 
 class Participacion <<table>> {
-  +id_participacion: BIGINT <<PK>>
-  id_partido: BIGINT <<FK>>
-  id_usuario: BIGINT <<FK>>
-  estado: ENUM('CONFIRMADA','CANCELADA','ASISTIO','NO_ASISTIO')
-  fecha_union: DATETIME
+  +id_participacion: BIGINT {PK}
+  -id_partido: BIGINT {FK}
+  -id_usuario: BIGINT {FK}
+  -estado: EstadoParticipacion
+  -fecha_union: DATETIME
 }
 
 class ReservaCancha <<table>> {
-  +id_reserva: BIGINT <<PK>>
-  id_cancha: BIGINT <<FK>>
-  id_partido: BIGINT <<FK>>
-  fecha_reserva: DATE
-  hora_inicio: TIME
-  hora_fin: TIME
-  estado: ENUM('PENDIENTE','CONFIRMADA','CANCELADA')
-  monto_total: DECIMAL(10,2)
+  +id_reserva: BIGINT {PK}
+  -id_cancha: BIGINT {FK}
+  -id_partido: BIGINT {FK}
+  -fecha_reserva: DATE
+  -hora_inicio: TIME
+  -hora_fin: TIME
+  -estado: EstadoReserva
+  -monto_total: DECIMAL(10,2)
 }
 
 class Pago <<table>> {
-  +id_pago: BIGINT <<PK>>
-  id_reserva: BIGINT <<FK>>
-  id_usuario: BIGINT <<FK>>
-  monto: DECIMAL(10,2)
-  metodo_pago: ENUM('YAPE','PLIN','TARJETA','EFECTIVO')
-  estado: ENUM('PENDIENTE','PAGADO','RECHAZADO','DEVUELTO')
-  codigo_transaccion: VARCHAR(120)
-  fecha_pago: DATETIME
+  +id_pago: BIGINT {PK}
+  -id_reserva: BIGINT {FK}
+  -id_usuario: BIGINT {FK}
+  -monto: DECIMAL(10,2)
+  -metodo_pago: MetodoPago
+  -estado: EstadoPago
+  -codigo_transaccion: VARCHAR(120)
+  -fecha_pago: DATETIME
 }
 
 class Calificacion <<table>> {
-  +id_calificacion: BIGINT <<PK>>
-  id_partido: BIGINT <<FK>>
-  id_usuario_calificador: BIGINT <<FK>>
-  id_usuario_calificado: BIGINT <<FK>>
-  puntaje: INT
-  comentario: VARCHAR(255)
-  fecha_calificacion: DATETIME
+  +id_calificacion: BIGINT {PK}
+  -id_partido: BIGINT {FK}
+  -id_usuario_calificador: BIGINT {FK}
+  -id_usuario_calificado: BIGINT {FK}
+  -puntaje: INT
+  -comentario: VARCHAR(255)
+  -fecha_calificacion: DATETIME
 }
 
 class ReporteUsuario <<table>> {
-  +id_reporte: BIGINT <<PK>>
-  id_usuario_reportante: BIGINT <<FK>>
-  id_usuario_reportado: BIGINT <<FK>>
-  id_partido: BIGINT <<FK>>
-  motivo: VARCHAR(150)
-  descripcion: VARCHAR(255)
-  estado: ENUM('PENDIENTE','REVISADO','DESCARTADO')
-  fecha_reporte: DATETIME
+  +id_reporte: BIGINT {PK}
+  -id_usuario_reportante: BIGINT {FK}
+  -id_usuario_reportado: BIGINT {FK}
+  -id_partido: BIGINT {FK}
+  -motivo: VARCHAR(150)
+  -descripcion: VARCHAR(255)
+  -estado: EstadoReporte
+  -fecha_reporte: DATETIME
 }
 
 class Notificacion <<table>> {
-  +id_notificacion: BIGINT <<PK>>
-  id_usuario: BIGINT <<FK>>
-  titulo: VARCHAR(120)
-  mensaje: VARCHAR(255)
-  tipo: ENUM('PARTIDO','RESERVA','PAGO','SISTEMA')
-  leida: BOOLEAN
-  fecha_envio: DATETIME
+  +id_notificacion: BIGINT {PK}
+  -id_usuario: BIGINT {FK}
+  -titulo: VARCHAR(120)
+  -mensaje: VARCHAR(255)
+  -tipo: TipoNotificacion
+  -leida: BOOLEAN
+  -fecha_envio: DATETIME
 }
 
-Usuario "1" -- "0..*" PreferenciaDeportiva : configura
-Deporte "1" -- "0..*" PreferenciaDeportiva : pertenece a
+' ==================== RELACIONES ====================
 
-Usuario "1" -- "0..*" Cancha : administra
-Cancha "1" -- "0..*" HorarioCancha : posee
+' Asociaciones simples con navegabilidad
+Usuario "1" --> "0..*" Cancha : administra >
+Usuario "1" --> "0..*" Partido : organiza >
+Deporte "1" --> "0..*" Partido : clasifica >
+Cancha "1" --> "0..*" Partido : es sede de >
 
-Usuario "1" -- "0..*" Partido : organiza
-Deporte "1" -- "0..*" Partido : clasifica
-Cancha "1" -- "0..*" Partido : sede
+' Composiciones (el hijo no existe sin el padre)
+Cancha "1" -- "0.." HorarioCancha : posee
+Partido "1" -- "0.." Participacion : contiene
+Partido "1" *-- "0..1" ReservaCancha : genera
 
-Partido "1" -- "0..*" Participacion : contiene
-Usuario "1" -- "0..*" Participacion : se une
+' Agregaciones / asociaciones con clase de asociación (N:M con atributos)
+Usuario "0.." -- "0.." Deporte : tiene preferencia >
+(Usuario, Deporte) .. PreferenciaDeportiva
 
-Cancha "1" -- "0..*" ReservaCancha : reserva
-Partido "1" -- "0..1" ReservaCancha : genera
+Usuario "0.." -- "0.." Partido : participa en >
+(Usuario, Partido) .. Participacion
 
-ReservaCancha "1" -- "0..1" Pago : se paga
-Usuario "1" -- "0..*" Pago : realiza
+Cancha "1" --> "0..*" ReservaCancha : reserva >
 
-Partido "1" -- "0..*" Calificacion : genera
-Usuario "1" -- "0..*" Calificacion : califica
-Usuario "1" -- "0..*" Calificacion : recibe
+ReservaCancha "1" o-- "0..1" Pago : se paga con
+Usuario "1" --> "0..*" Pago : realiza >
 
-Usuario "1" -- "0..*" ReporteUsuario : reporta
-Usuario "1" -- "0..*" ReporteUsuario : es_reportado
-Partido "0..1" -- "0..*" ReporteUsuario : contexto
+Usuario "0.." -- "0.." Partido : califica >
+(Usuario, Partido) .. Calificacion
+Usuario "1" --> "0..*" Calificacion : recibe >
 
-Usuario "1" -- "0..*" Notificacion : recibe
+Usuario "0.." -- "0.." Usuario : reporta >
+(Usuario, Usuario) .. ReporteUsuario
+Partido "0..1" --> "0..*" ReporteUsuario : da contexto a >
+
+Usuario "1" -- "0.." Notificacion : recibe
+
+' ==================== ENUMS ASOCIADOS ====================
+Usuario ..> RolUsuario
+Usuario ..> EstadoUsuario
+PreferenciaDeportiva ..> NivelJugador
+HorarioCancha ..> DiaSemana
+Partido ..> NivelPartido
+Partido ..> EstadoPartido
+Participacion ..> EstadoParticipacion
+ReservaCancha ..> EstadoReserva
+Pago ..> MetodoPago
+Pago ..> EstadoPago
+ReporteUsuario ..> EstadoReporte
+Notificacion ..> TipoNotificacion
 
 @enduml
