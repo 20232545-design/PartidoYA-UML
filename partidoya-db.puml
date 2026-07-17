@@ -1,268 +1,429 @@
 @startuml
-title Diagrama UML de Base de Datos - PartidoYA (Corregido)
+title PartidoYA - Modelo de Base de Datos 
+
+
+
+!pragma layout smetana
+
+left to right direction
 
 hide methods
+hide circle
+
+skinparam linetype polyline
+skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam nodesep 80
+skinparam ranksep 100
 
-' ==================== ENUMERACIONES ====================
-enum RolUsuario {
-  JUGADOR
-  ADMIN_CANCHA
+skinparam package {
+  BorderThickness 2
+  FontStyle bold
 }
 
-enum EstadoUsuario {
-  ACTIVO
-  SUSPENDIDO
-  ELIMINADO
+skinparam class {
+  BorderThickness 1
 }
 
-enum NivelJugador {
-  PRINCIPIANTE
-  INTERMEDIO
-  AVANZADO
+
+package "Perfil / IAM Bounded Context" as BC_PERFIL <<Bounded Context>> {
+
+  enum RolUsuario {
+    JUGADOR
+    ADMIN_CANCHA
+    ADMIN_SISTEMA
+  }
+
+  enum EstadoUsuario {
+    ACTIVO
+    SUSPENDIDO
+    ELIMINADO
+  }
+
+  enum NivelDeportivo {
+    PRINCIPIANTE
+    INTERMEDIO
+    AVANZADO
+  }
+
+  class Usuario <<table>> {
+    id_usuario: BIGINT <<PK>>
+    correo: VARCHAR(150) <<UQ>>
+    rol: RolUsuario
+    estado: EstadoUsuario
+    correo_verificado: BOOLEAN
+    fecha_registro: DATETIME
+  }
+
+  class Credencial <<table>> {
+    id_credencial: BIGINT <<PK>>
+    id_usuario: BIGINT <<FK, UQ>>
+    password_hash: VARCHAR(255)
+    ultimo_acceso: DATETIME
+    intentos_fallidos: INT
+    fecha_actualizacion: DATETIME
+  }
+
+  class PerfilUsuario <<table>> {
+    id_perfil: BIGINT <<PK>>
+    id_usuario: BIGINT <<FK, UQ>>
+    nombre: VARCHAR(100)
+    apellido: VARCHAR(100)
+    telefono: VARCHAR(20)
+    foto_perfil_url: VARCHAR(255)
+    fecha_actualizacion: DATETIME
+  }
+
+  class Deporte <<table>> {
+    id_deporte: BIGINT <<PK>>
+    nombre: VARCHAR(80) <<UQ>>
+    descripcion: VARCHAR(255)
+    activo: BOOLEAN
+  }
+
+  class PreferenciaDeportiva <<table>> {
+    id_preferencia: BIGINT <<PK>>
+    id_perfil: BIGINT <<FK>>
+    id_deporte: BIGINT <<FK>>
+    nivel: NivelDeportivo
+    es_favorito: BOOLEAN
+  }
+
+  Usuario "1" -down- "1" Credencial : posee
+  Usuario "1" -right- "1" PerfilUsuario : tiene
+
+  PerfilUsuario "1" -down- "0..*" PreferenciaDeportiva : configura
+  Deporte "1" -right- "0..*" PreferenciaDeportiva : corresponde a
+
+
 }
 
-enum DiaSemana {
-  LUN
-  MAR
-  MIE
-  JUE
-  VIE
-  SAB
-  DOM
+
+package "Partido Bounded Context" as BC_PARTIDO <<Bounded Context>> {
+
+  enum NivelPartido {
+    PRINCIPIANTE
+    INTERMEDIO
+    AVANZADO
+    MIXTO
+  }
+
+  enum EstadoPartido {
+    BORRADOR
+    ABIERTO
+    COMPLETO
+    CANCELADO
+    FINALIZADO
+  }
+
+  enum EstadoParticipacion {
+    CONFIRMADA
+    CANCELADA
+    EN_ESPERA
+    ASISTIO
+    NO_ASISTIO
+  }
+
+  enum EstadoReporte {
+    PENDIENTE
+    REVISADO
+    DESCARTADO
+    SANCIONADO
+  }
+
+  class Partido <<table>> {
+    id_partido: BIGINT <<PK>>
+    id_organizador: BIGINT <<FK>>
+    id_deporte: BIGINT <<FK>>
+    id_cancha: BIGINT <<FK>>
+    titulo: VARCHAR(120)
+    descripcion: VARCHAR(255)
+    fecha: DATE
+    hora_inicio: TIME
+    hora_fin: TIME
+    direccion_referencia: VARCHAR(255)
+    cupos_totales: INT
+    nivel_requerido: NivelPartido
+    estado: EstadoPartido
+    fecha_creacion: DATETIME
+  }
+
+  class Participacion <<table>> {
+    id_participacion: BIGINT <<PK>>
+    id_partido: BIGINT <<FK>>
+    id_usuario: BIGINT <<FK>>
+    estado: EstadoParticipacion
+    fecha_union: DATETIME
+    fecha_actualizacion: DATETIME
+  }
+
+  class Calificacion <<table>> {
+    id_calificacion: BIGINT <<PK>>
+    id_partido: BIGINT <<FK>>
+    id_usuario_calificador: BIGINT <<FK>>
+    id_usuario_calificado: BIGINT <<FK>>
+    puntaje: SMALLINT
+    comentario: VARCHAR(255)
+    fecha_calificacion: DATETIME
+  }
+
+  class ReporteUsuario <<table>> {
+    id_reporte: BIGINT <<PK>>
+    id_usuario_reportante: BIGINT <<FK>>
+    id_usuario_reportado: BIGINT <<FK>>
+    id_partido: BIGINT <<FK>>
+    motivo: VARCHAR(150)
+    descripcion: VARCHAR(500)
+    estado: EstadoReporte
+    fecha_reporte: DATETIME
+    fecha_revision: DATETIME
+  }
+
+
+  Partido "1" -right- "0..*" Participacion : registra
+  Partido "1" -down- "0..*" Calificacion : contextualiza
+
+  Partido "0..1" -down- "0..*" ReporteUsuario : contextualiza
+
+
 }
 
-enum NivelPartido {
-  PRINCIPIANTE
-  INTERMEDIO
-  AVANZADO
-  MIXTO
+
+package "Reserva Bounded Context" as BC_RESERVA <<Bounded Context>> {
+
+  enum EstadoCancha {
+    ACTIVA
+    INACTIVA
+    MANTENIMIENTO
+  }
+
+  enum DiaSemana {
+    LUN
+    MAR
+    MIE
+    JUE
+    VIE
+    SAB
+    DOM
+  }
+
+  enum EstadoReserva {
+    PENDIENTE
+    CONFIRMADA
+    CANCELADA
+    VENCIDA
+  }
+
+  enum MetodoPagoReserva {
+    YAPE
+    PLIN
+    TARJETA
+    EFECTIVO
+  }
+
+  enum EstadoPagoReserva {
+    PENDIENTE
+    PAGADO
+    RECHAZADO
+    DEVUELTO
+  }
+
+  class Cancha <<table>> {
+    id_cancha: BIGINT <<PK>>
+    id_administrador: BIGINT <<FK>>
+    nombre: VARCHAR(120)
+    descripcion: VARCHAR(255)
+    direccion: VARCHAR(255)
+    distrito: VARCHAR(100)
+    latitud: DECIMAL(10,8)
+    longitud: DECIMAL(11,8)
+    precio_hora: DECIMAL(10,2)
+    estado: EstadoCancha
+    fecha_registro: DATETIME
+  }
+
+  class HorarioDisponible <<table>> {
+    id_horario: BIGINT <<PK>>
+    id_cancha: BIGINT <<FK>>
+    dia_semana: DiaSemana
+    hora_inicio: TIME
+    hora_fin: TIME
+    disponible: BOOLEAN
+  }
+
+  class BloqueoHorario <<table>> {
+    id_bloqueo: BIGINT <<PK>>
+    id_cancha: BIGINT <<FK>>
+    fecha: DATE
+    hora_inicio: TIME
+    hora_fin: TIME
+    motivo: VARCHAR(255)
+    fecha_creacion: DATETIME
+  }
+
+  class ReservaCancha <<table>> {
+    id_reserva: BIGINT <<PK>>
+    id_cancha: BIGINT <<FK>>
+    id_partido: BIGINT <<FK, UQ>>
+    id_usuario_reservante: BIGINT <<FK>>
+    fecha_reserva: DATE
+    hora_inicio: TIME
+    hora_fin: TIME
+    estado: EstadoReserva
+    monto_total: DECIMAL(10,2)
+    fecha_creacion: DATETIME
+  }
+
+  class PagoReserva <<table>> {
+    id_pago_reserva: BIGINT <<PK>>
+    id_reserva: BIGINT <<FK>>
+    id_usuario: BIGINT <<FK>>
+    monto: DECIMAL(10,2)
+    metodo: MetodoPagoReserva
+    estado: EstadoPagoReserva
+    codigo_transaccion: VARCHAR(120)
+    comprobante_url: VARCHAR(255)
+    fecha_pago: DATETIME
+  }
+
+  Cancha "1" -right- "0..*" HorarioDisponible : dispone de
+  Cancha "1" -down- "0..*" BloqueoHorario : bloquea
+
+  Cancha "1" -right- "0..*" ReservaCancha : recibe
+  ReservaCancha "1" -down- "0..*" PagoReserva : registra
+
+
+
+
+package "Suscripción Bounded Context" as BC_SUSCRIPCION <<Bounded Context>> {
+
+  enum TipoPlan {
+    JUGADOR
+    ADMIN_CANCHA
+  }
+
+  enum PeriodicidadPlan {
+    MENSUAL
+    TRIMESTRAL
+    ANUAL
+  }
+
+  enum EstadoSuscripcion {
+    PENDIENTE
+    ACTIVA
+    VENCIDA
+    CANCELADA
+    SUSPENDIDA
+  }
+
+  enum MetodoPagoSuscripcion {
+    TARJETA
+    YAPE
+    PLIN
+  }
+
+  enum EstadoPagoSuscripcion {
+    PENDIENTE
+    PAGADO
+    RECHAZADO
+    DEVUELTO
+  }
+
+  class PlanSuscripcion <<table>> {
+    id_plan: BIGINT <<PK>>
+    nombre: VARCHAR(100)
+    descripcion: VARCHAR(255)
+    tipo: TipoPlan
+    periodicidad: PeriodicidadPlan
+    precio: DECIMAL(10,2)
+    activo: BOOLEAN
+  }
+
+  class Suscripcion <<table>> {
+    id_suscripcion: BIGINT <<PK>>
+    id_usuario: BIGINT <<FK>>
+    id_plan: BIGINT <<FK>>
+    estado: EstadoSuscripcion
+    fecha_inicio: DATE
+    fecha_fin: DATE
+    renovacion_automatica: BOOLEAN
+    fecha_creacion: DATETIME
+  }
+
+  class PagoSuscripcion <<table>> {
+    id_pago_suscripcion: BIGINT <<PK>>
+    id_suscripcion: BIGINT <<FK>>
+    monto: DECIMAL(10,2)
+    metodo: MetodoPagoSuscripcion
+    estado: EstadoPagoSuscripcion
+    codigo_transaccion: VARCHAR(120)
+    fecha_pago: DATETIME
+  }
+
+
+  PlanSuscripcion "1" -right- "0..*" Suscripcion : define
+  Suscripcion "1" -down- "0..*" PagoSuscripcion : registra
+
+
 }
 
-enum EstadoPartido {
-  ABIERTO
-  LLENO
-  CANCELADO
-  FINALIZADO
+
+
+package "Notificación Bounded Context" as BC_NOTIFICACION <<Bounded Context>> {
+
+  enum TipoNotificacion {
+    PARTIDO
+    RESERVA
+    PAGO
+    SUSCRIPCION
+    REPORTE
+    SISTEMA
+  }
+
+  class Notificacion <<table>> {
+    id_notificacion: BIGINT <<PK>>
+    id_usuario: BIGINT <<FK>>
+    titulo: VARCHAR(120)
+    mensaje: VARCHAR(500)
+    tipo: TipoNotificacion
+    referencia_id: BIGINT
+    leida: BOOLEAN
+    fecha_envio: DATETIME
+    fecha_lectura: DATETIME
+  }
 }
 
-enum EstadoParticipacion {
-  CONFIRMADA
-  CANCELADA
-  ASISTIO
-  NO_ASISTIO
-}
 
-enum EstadoReserva {
-  PENDIENTE
-  CONFIRMADA
-  CANCELADA
-}
 
-enum MetodoPago {
-  YAPE
-  PLIN
-  TARJETA
-  EFECTIVO
-}
+Usuario "1" -right- "0..*" Partido : organiza
+Usuario "1" -right- "0..*" Participacion : participa
 
-enum EstadoPago {
-  PENDIENTE
-  PAGADO
-  RECHAZADO
-  DEVUELTO
-}
+Deporte "1" -right- "0..*" Partido : clasifica
 
-enum EstadoReporte {
-  PENDIENTE
-  REVISADO
-  DESCARTADO
-}
+Usuario "1" -right- "0..*" Calificacion : calificador
+Usuario "1" -right- "0..*" Calificacion : calificado
 
-enum TipoNotificacion {
-  PARTIDO
-  RESERVA
-  PAGO
-  SISTEMA
-}
+Usuario "1" -right- "0..*" ReporteUsuario : reportante
+Usuario "1" -right- "0..*" ReporteUsuario : reportado
 
-' ==================== CLASES ====================
-class Usuario <<table>> {
-  +id_usuario: BIGINT {PK}
-  -nombre: VARCHAR(100)
-  -apellido: VARCHAR(100)
-  -correo: VARCHAR(150) {unique}
-  -password_hash: VARCHAR(255)
-  -telefono: VARCHAR(20)
-  -foto_perfil_url: VARCHAR(255)
-  -rol: RolUsuario
-  -correo_verificado: BOOLEAN
-  -estado: EstadoUsuario
-  -fecha_registro: DATETIME
-}
 
-class Deporte <<table>> {
-  +id_deporte: BIGINT {PK}
-  -nombre: VARCHAR(80)
-  -descripcion: VARCHAR(255)
-  -estado: BOOLEAN
-}
 
-class PreferenciaDeportiva <<table>> {
-  +id_preferencia: BIGINT {PK}
-  -id_usuario: BIGINT {FK}
-  -id_deporte: BIGINT {FK}
-  -nivel: NivelJugador
-  -es_favorito: BOOLEAN
-}
+Usuario "1" -right- "0..*" Cancha : administra
+Usuario "1" -right- "0..*" ReservaCancha : reserva
+Usuario "1" -right- "0..*" PagoReserva : realiza
 
-class Cancha <<table>> {
-  +id_cancha: BIGINT {PK}
-  -id_administrador: BIGINT {FK}
-  -nombre: VARCHAR(120)
-  -direccion: VARCHAR(255)
-  -distrito: VARCHAR(100)
-  -latitud: DECIMAL(10,8)
-  -longitud: DECIMAL(11,8)
-  -precio_hora: DECIMAL(10,2)
-  -estado: ENUM('ACTIVA','INACTIVA')
-}
 
-class HorarioCancha <<table>> {
-  +id_horario: BIGINT {PK}
-  -id_cancha: BIGINT {FK}
-  -dia_semana: DiaSemana
-  -hora_inicio: TIME
-  -hora_fin: TIME
-  -disponible: BOOLEAN
-}
+Partido "1" -right- "0..1" ReservaCancha : origina
+Cancha "1" -left- "0..*" Partido : sirve como sede
 
-class Partido <<table>> {
-  +id_partido: BIGINT {PK}
-  -id_deporte: BIGINT {FK}
-  -id_cancha: BIGINT {FK}
-  -id_organizador: BIGINT {FK}
-  -titulo: VARCHAR(120)
-  -descripcion: VARCHAR(255)
-  -fecha: DATE
-  -hora_inicio: TIME
-  -hora_fin: TIME
-  -direccion_referencia: VARCHAR(255)
-  -cupos_totales: INT
-  -cupos_disponibles: INT
-  -nivel_requerido: NivelPartido
-  -estado: EstadoPartido
-  -fecha_creacion: DATETIME
-}
 
-class Participacion <<table>> {
-  +id_participacion: BIGINT {PK}
-  -id_partido: BIGINT {FK}
-  -id_usuario: BIGINT {FK}
-  -estado: EstadoParticipacion
-  -fecha_union: DATETIME
-}
 
-class ReservaCancha <<table>> {
-  +id_reserva: BIGINT {PK}
-  -id_cancha: BIGINT {FK}
-  -id_partido: BIGINT {FK}
-  -fecha_reserva: DATE
-  -hora_inicio: TIME
-  -hora_fin: TIME
-  -estado: EstadoReserva
-  -monto_total: DECIMAL(10,2)
-}
+Usuario "1" -right- "0..*" Suscripcion : contrata
 
-class Pago <<table>> {
-  +id_pago: BIGINT {PK}
-  -id_reserva: BIGINT {FK}
-  -id_usuario: BIGINT {FK}
-  -monto: DECIMAL(10,2)
-  -metodo_pago: MetodoPago
-  -estado: EstadoPago
-  -codigo_transaccion: VARCHAR(120)
-  -fecha_pago: DATETIME
-}
 
-class Calificacion <<table>> {
-  +id_calificacion: BIGINT {PK}
-  -id_partido: BIGINT {FK}
-  -id_usuario_calificador: BIGINT {FK}
-  -id_usuario_calificado: BIGINT {FK}
-  -puntaje: INT
-  -comentario: VARCHAR(255)
-  -fecha_calificacion: DATETIME
-}
 
-class ReporteUsuario <<table>> {
-  +id_reporte: BIGINT {PK}
-  -id_usuario_reportante: BIGINT {FK}
-  -id_usuario_reportado: BIGINT {FK}
-  -id_partido: BIGINT {FK}
-  -motivo: VARCHAR(150)
-  -descripcion: VARCHAR(255)
-  -estado: EstadoReporte
-  -fecha_reporte: DATETIME
-}
+Usuario "1" -right- "0..*" Notificacion : recibe
 
-class Notificacion <<table>> {
-  +id_notificacion: BIGINT {PK}
-  -id_usuario: BIGINT {FK}
-  -titulo: VARCHAR(120)
-  -mensaje: VARCHAR(255)
-  -tipo: TipoNotificacion
-  -leida: BOOLEAN
-  -fecha_envio: DATETIME
-}
-
-' ==================== RELACIONES ====================
-
-' Asociaciones simples con navegabilidad
-Usuario "1" --> "0..*" Cancha : administra >
-Usuario "1" --> "0..*" Partido : organiza >
-Deporte "1" --> "0..*" Partido : clasifica >
-Cancha "1" --> "0..*" Partido : es sede de >
-
-' Composiciones (el hijo no existe sin el padre)
-Cancha "1" -- "0.." HorarioCancha : posee
-Partido "1" -- "0.." Participacion : contiene
-Partido "1" *-- "0..1" ReservaCancha : genera
-
-' Agregaciones / asociaciones con clase de asociación (N:M con atributos)
-Usuario "0.." -- "0.." Deporte : tiene preferencia >
-(Usuario, Deporte) .. PreferenciaDeportiva
-
-Usuario "0.." -- "0.." Partido : participa en >
-(Usuario, Partido) .. Participacion
-
-Cancha "1" --> "0..*" ReservaCancha : reserva >
-
-ReservaCancha "1" o-- "0..1" Pago : se paga con
-Usuario "1" --> "0..*" Pago : realiza >
-
-Usuario "0.." -- "0.." Partido : califica >
-(Usuario, Partido) .. Calificacion
-Usuario "1" --> "0..*" Calificacion : recibe >
-
-Usuario "0.." -- "0.." Usuario : reporta >
-(Usuario, Usuario) .. ReporteUsuario
-Partido "0..1" --> "0..*" ReporteUsuario : da contexto a >
-
-Usuario "1" -- "0.." Notificacion : recibe
-
-' ==================== ENUMS ASOCIADOS ====================
-Usuario ..> RolUsuario
-Usuario ..> EstadoUsuario
-PreferenciaDeportiva ..> NivelJugador
-HorarioCancha ..> DiaSemana
-Partido ..> NivelPartido
-Partido ..> EstadoPartido
-Participacion ..> EstadoParticipacion
-ReservaCancha ..> EstadoReserva
-Pago ..> MetodoPago
-Pago ..> EstadoPago
-ReporteUsuario ..> EstadoReporte
-Notificacion ..> TipoNotificacion
 
 @enduml
