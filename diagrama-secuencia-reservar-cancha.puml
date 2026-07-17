@@ -1,0 +1,88 @@
+@startuml
+title PartidoYA - Diagrama de Secuencia: Reservar cancha
+
+skinparam backgroundColor transparent
+skinparam sequence {
+    ArrowColor #1F3851
+    ActorBorderColor #1F3851
+    LifeLineBorderColor #1F3851
+    LifeLineBackgroundColor #F5F5F5
+    ParticipantBorderColor #1F3851
+    ParticipantBackgroundColor #EAF2F8
+    DatabaseBorderColor #497676
+    DatabaseBackgroundColor #E8F6F3
+}
+
+autonumber
+
+actor Jugador
+boundary "Angular SPA\nDetalle de cancha" as Frontend
+control "ReservaController" as Controller
+control "CrearReservaService\nReserva BC" as Service
+entity "CanchaRepository" as CanchaRepo
+entity "ReservaRepository" as ReservaRepo
+database "PartidoYA_DB" as DB
+
+Jugador -> Frontend: Selecciona una cancha
+Frontend --> Jugador: Mostrar horarios disponibles
+
+Jugador -> Frontend: Selecciona fecha y horario
+Jugador -> Frontend: Selecciona «Reservar»
+
+Frontend -> Controller: POST /api/reservas\n(idCancha, fecha, horario)
+activate Controller
+
+Controller -> Service: crearReserva(datos, idUsuario)
+activate Service
+
+Service -> CanchaRepo: buscarPorId(idCancha)
+activate CanchaRepo
+
+CanchaRepo -> DB: SELECT cancha
+activate DB
+DB --> CanchaRepo: Datos de la cancha
+deactivate DB
+
+CanchaRepo --> Service: Cancha encontrada
+deactivate CanchaRepo
+
+Service -> ReservaRepo: verificarDisponibilidad\n(idCancha, fecha, horario)
+activate ReservaRepo
+
+ReservaRepo -> DB: SELECT reservas coincidentes
+activate DB
+DB --> ReservaRepo: Resultado de disponibilidad
+deactivate DB
+
+ReservaRepo --> Service: Horario disponible/no disponible
+deactivate ReservaRepo
+
+alt Horario ocupado
+    Service --> Controller: Horario no disponible
+    Controller --> Frontend: HTTP 409 Conflict
+    Frontend --> Jugador: Mostrar horario ocupado
+
+else Horario disponible
+    Service -> Service: Calcular precio total
+    Service -> Service: Crear reserva\nestado = PENDIENTE_PAGO
+
+    Service -> ReservaRepo: guardar(reserva)
+    activate ReservaRepo
+
+    ReservaRepo -> DB: INSERT INTO reservas
+    activate DB
+    DB --> ReservaRepo: Reserva registrada
+    deactivate DB
+
+    ReservaRepo --> Service: Reserva creada
+    deactivate ReservaRepo
+
+    Service --> Controller: Reserva pendiente de pago
+    Controller --> Frontend: HTTP 201 Created\n(idReserva, monto)
+    Frontend --> Jugador: Mostrar resumen y método de pago
+end
+
+deactivate Service
+deactivate Controller
+
+@enduml
