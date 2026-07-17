@@ -1,9 +1,5 @@
 @startuml
-title PartidoYA - Modelo de Base de Datos 
-
-
-
-!pragma layout smetana
+title PartidoYA - Modelo de Base de Datos
 
 left to right direction
 
@@ -14,8 +10,10 @@ skinparam linetype polyline
 skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
 skinparam shadowing false
-skinparam nodesep 80
-skinparam ranksep 100
+
+skinparam nodesep 70
+skinparam ranksep 90
+skinparam dpi 180
 
 skinparam package {
   BorderThickness 2
@@ -25,7 +23,6 @@ skinparam package {
 skinparam class {
   BorderThickness 1
 }
-
 
 package "Perfil / IAM Bounded Context" as BC_PERFIL <<Bounded Context>> {
 
@@ -90,15 +87,11 @@ package "Perfil / IAM Bounded Context" as BC_PERFIL <<Bounded Context>> {
     es_favorito: BOOLEAN
   }
 
-  Usuario "1" -down- "1" Credencial : posee
+  Usuario "1" -right- "1" Credencial : posee
   Usuario "1" -right- "1" PerfilUsuario : tiene
-
-  PerfilUsuario "1" -down- "0..*" PreferenciaDeportiva : configura
+  PerfilUsuario "1" -right- "0..*" PreferenciaDeportiva : configura
   Deporte "1" -right- "0..*" PreferenciaDeportiva : corresponde a
-
-
 }
-
 
 package "Partido Bounded Context" as BC_PARTIDO <<Bounded Context>> {
 
@@ -180,15 +173,10 @@ package "Partido Bounded Context" as BC_PARTIDO <<Bounded Context>> {
     fecha_revision: DATETIME
   }
 
-
   Partido "1" -right- "0..*" Participacion : registra
-  Partido "1" -down- "0..*" Calificacion : contextualiza
-
-  Partido "0..1" -down- "0..*" ReporteUsuario : contextualiza
-
-
+  Partido "1" -right- "0..*" Calificacion : contextualiza
+  Partido "0..1" -right- "0..*" ReporteUsuario : contextualiza
 }
-
 
 package "Reserva Bounded Context" as BC_RESERVA <<Bounded Context>> {
 
@@ -288,13 +276,10 @@ package "Reserva Bounded Context" as BC_RESERVA <<Bounded Context>> {
   }
 
   Cancha "1" -right- "0..*" HorarioDisponible : dispone de
-  Cancha "1" -down- "0..*" BloqueoHorario : bloquea
-
+  Cancha "1" -right- "0..*" BloqueoHorario : bloquea
   Cancha "1" -right- "0..*" ReservaCancha : recibe
-  ReservaCancha "1" -down- "0..*" PagoReserva : registra
-
-
-
+  ReservaCancha "1" -right- "0..*" PagoReserva : registra
+}
 
 package "Suscripción Bounded Context" as BC_SUSCRIPCION <<Bounded Context>> {
 
@@ -361,14 +346,9 @@ package "Suscripción Bounded Context" as BC_SUSCRIPCION <<Bounded Context>> {
     fecha_pago: DATETIME
   }
 
-
   PlanSuscripcion "1" -right- "0..*" Suscripcion : define
-  Suscripcion "1" -down- "0..*" PagoSuscripcion : registra
-
-
+  Suscripcion "1" -right- "0..*" PagoSuscripcion : registra
 }
-
-
 
 package "Notificación Bounded Context" as BC_NOTIFICACION <<Bounded Context>> {
 
@@ -394,11 +374,8 @@ package "Notificación Bounded Context" as BC_NOTIFICACION <<Bounded Context>> {
   }
 }
 
-
-
 Usuario "1" -right- "0..*" Partido : organiza
 Usuario "1" -right- "0..*" Participacion : participa
-
 Deporte "1" -right- "0..*" Partido : clasifica
 
 Usuario "1" -right- "0..*" Calificacion : calificador
@@ -407,23 +384,14 @@ Usuario "1" -right- "0..*" Calificacion : calificado
 Usuario "1" -right- "0..*" ReporteUsuario : reportante
 Usuario "1" -right- "0..*" ReporteUsuario : reportado
 
-
-
 Usuario "1" -right- "0..*" Cancha : administra
 Usuario "1" -right- "0..*" ReservaCancha : reserva
 Usuario "1" -right- "0..*" PagoReserva : realiza
 
-
 Partido "1" -right- "0..1" ReservaCancha : origina
-Cancha "1" -left- "0..*" Partido : sirve como sede
-
-
+Partido "0..*" -right- "1" Cancha : se realiza en
 
 Usuario "1" -right- "0..*" Suscripcion : contrata
-
-
-
 Usuario "1" -right- "0..*" Notificacion : recibe
-
 
 @enduml
