@@ -1,0 +1,74 @@
+@startuml
+title PartidoYA - Diagrama de Secuencia: Inicio de sesión
+
+skinparam backgroundColor transparent
+skinparam sequence {
+    ArrowColor #1F3851
+    ActorBorderColor #1F3851
+    LifeLineBorderColor #1F3851
+    LifeLineBackgroundColor #F5F5F5
+    ParticipantBorderColor #1F3851
+    ParticipantBackgroundColor #EAF2F8
+    DatabaseBorderColor #497676
+    DatabaseBackgroundColor #E8F6F3
+}
+
+autonumber
+
+actor Usuario
+boundary "Angular SPA\nPantalla de inicio de sesión" as Frontend
+control "AuthController\nPerfil / IAM" as Controller
+control "AuthenticationService" as AuthService
+entity "UsuarioRepository" as Repository
+database "PartidoYA_DB" as DB
+
+Usuario -> Frontend: Ingresa correo y contraseña
+Usuario -> Frontend: Selecciona «Iniciar sesión»
+
+Frontend -> Frontend: Validar formato de campos
+
+alt Campos incompletos o inválidos
+    Frontend --> Usuario: Mostrar errores de validación
+else Campos válidos
+    Frontend -> Controller: POST /api/auth/login\n(correo, contraseña)
+    activate Controller
+
+    Controller -> AuthService: autenticar(correo, contraseña)
+    activate AuthService
+
+    AuthService -> Repository: buscarPorCorreo(correo)
+    activate Repository
+
+    Repository -> DB: SELECT usuario por correo
+    activate DB
+    DB --> Repository: Datos del usuario
+    deactivate DB
+
+    Repository --> AuthService: Usuario encontrado
+    deactivate Repository
+
+    alt Usuario no existe
+        AuthService --> Controller: Error de autenticación
+        Controller --> Frontend: HTTP 401 Unauthorized
+        Frontend --> Usuario: Mostrar credenciales incorrectas
+    else Usuario encontrado
+        AuthService -> AuthService: Verificar contraseña
+
+        alt Contraseña incorrecta
+            AuthService --> Controller: Error de autenticación
+            Controller --> Frontend: HTTP 401 Unauthorized
+            Frontend --> Usuario: Mostrar credenciales incorrectas
+        else Credenciales correctas
+            AuthService -> AuthService: Generar token JWT
+            AuthService --> Controller: Token y datos del usuario
+            Controller --> Frontend: HTTP 200 OK\n(token, usuario)
+            Frontend -> Frontend: Guardar sesión
+            Frontend --> Usuario: Mostrar dashboard
+        end
+    end
+
+    deactivate AuthService
+    deactivate Controller
+end
+
+@enduml
