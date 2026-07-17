@@ -6,274 +6,272 @@ skinparam packageStyle rectangle
 
 left to right direction
 
+package "IAM / Profile Bounded Context" {
 
-package "IAM / Perfil Bounded Context" {
-
-  class Usuario {
+  class User {
     +id: Long
     +email: String
-    +estado: EstadoUsuario
-    +rol: RolUsuario
-    +fechaRegistro: DateTime
-    +activarCuenta()
-    +desactivarCuenta()
+    +status: UserStatus
+    +role: UserRole
+    +registrationDate: DateTime
+    +activateAccount()
+    +deactivateAccount()
   }
 
-  class Credencial {
+  class Credential {
     +id: Long
     +passwordHash: String
-    +ultimoLogin: DateTime
-    +cambiarPassword()
-    +validarPassword()
+    +lastLogin: DateTime
+    +changePassword()
+    +validatePassword()
   }
 
-  class PerfilUsuario {
+  class UserProfile {
     +id: Long
-    +nombreCompleto: String
-    +telefono: String
-    +fotoPerfilUrl: String
-    +actualizarDatos()
+    +fullName: String
+    +phoneNumber: String
+    +profilePictureUrl: String
+    +updateProfile()
   }
 
-  class PreferenciaDeportiva {
+  class SportPreference {
     +id: Long
-    +nivel: NivelDeportivo
-    +esPrincipal: Boolean
+    +skillLevel: SkillLevel
+    +isPrimary: Boolean
   }
 
-  class Deporte {
+  class Sport {
     +id: Long
-    +nombre: String
-    +descripcion: String
+    +name: String
+    +description: String
   }
 
-  enum RolUsuario {
-    JUGADOR
-    ORGANIZADOR
-    ADMIN_CANCHA
+  enum UserRole {
+    PLAYER
+    ORGANIZER
+    COURT_ADMIN
   }
 
-  enum EstadoUsuario {
-    PENDIENTE
-    ACTIVO
-    BLOQUEADO
+  enum UserStatus {
+    PENDING
+    ACTIVE
+    BLOCKED
   }
 
-  enum NivelDeportivo {
-    PRINCIPIANTE
-    INTERMEDIO
-    AVANZADO
+  enum SkillLevel {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
   }
 
-  Usuario "1" -- "1" Credencial
-  Usuario "1" -- "1" PerfilUsuario
-  PerfilUsuario "1" -- "0..*" PreferenciaDeportiva
-  PreferenciaDeportiva "*" -- "1" Deporte
+  User "1" -- "1" Credential
+  User "1" -- "1" UserProfile
+  UserProfile "1" -- "0..*" SportPreference
+  SportPreference "*" -- "1" Sport
 }
 
-package "Partido Bounded Context" {
+package "Match Bounded Context" {
 
-  class Partido {
+  class Match {
     +id: Long
-    +titulo: String
-    +fecha: Date
-    +horaInicio: Time
-    +horaFin: Time
-    +estado: EstadoPartido
-    +crear()
-    +publicar()
-    +cancelar()
-    +cerrarInscripciones()
+    +title: String
+    +date: Date
+    +startTime: Time
+    +endTime: Time
+    +status: MatchStatus
+    +create()
+    +publish()
+    +cancel()
+    +closeRegistration()
   }
 
-  class Cupo {
-    +limiteJugadores: Integer
-    +vacantesDisponibles: Integer
-    +tomarCupo()
-    +liberarCupo()
-    +estaDisponible(): Boolean
+  class MatchCapacity {
+    +playerLimit: Integer
+    +availableSlots: Integer
+    +reserveSlot()
+    +releaseSlot()
+    +isAvailable(): Boolean
   }
 
-  class Participacion {
+  class Participation {
     +id: Long
-    +fechaInscripcion: DateTime
-    +estado: EstadoParticipacion
-    +confirmar()
-    +cancelar()
+    +registrationDate: DateTime
+    +status: ParticipationStatus
+    +confirm()
+    +cancel()
   }
 
-  class UsuarioRef {
-    +usuarioId: Long
-    +nombreVisible: String
+  class UserReference {
+    +userId: Long
+    +displayName: String
   }
 
-  class DeporteRef {
-    +deporteId: Long
-    +nombre: String
+  class SportReference {
+    +sportId: Long
+    +name: String
   }
 
-  class CanchaRef {
-    +canchaId: Long
-    +nombre: String
-    +direccion: String
+  class CourtReference {
+    +courtId: Long
+    +name: String
+    +address: String
   }
 
-  enum EstadoPartido {
-    BORRADOR
-    ABIERTO
-    COMPLETO
-    CANCELADO
-    FINALIZADO
+  enum MatchStatus {
+    DRAFT
+    OPEN
+    FULL
+    CANCELLED
+    FINISHED
   }
 
-  enum EstadoParticipacion {
-    CONFIRMADA
-    CANCELADA
-    EN_ESPERA
+  enum ParticipationStatus {
+    CONFIRMED
+    CANCELLED
+    WAITING
   }
 
-  Partido "1" *-- "1" Cupo
-  Partido "1" *-- "0..*" Participacion
-  Partido "1" --> "1" UsuarioRef : organizador
-  Partido "1" --> "1" DeporteRef
-  Partido "1" --> "1" CanchaRef
-  Participacion "*" --> "1" UsuarioRef : jugador
+  Match "1" *-- "1" MatchCapacity
+  Match "1" -- "0.." Participation
+  Match "1" --> "1" UserReference : organizer
+  Match "1" --> "1" SportReference
+  Match "1" --> "1" CourtReference
+  Participation "*" --> "1" UserReference : player
 }
 
-package "Reserva Bounded Context" {
+package "Reservation Bounded Context" {
 
-  class Cancha {
+  class Court {
     +id: Long
-    +nombre: String
-    +direccion: String
-    +distrito: String
-    +precioPorHora: Decimal
-    +estado: EstadoCancha
-    +actualizarDatos()
-    +deshabilitar()
+    +name: String
+    +address: String
+    +district: String
+    +pricePerHour: Decimal
+    +status: CourtStatus
+    +updateCourt()
+    +disableCourt()
   }
 
-  class HorarioDisponible {
+  class AvailableSchedule {
     +id: Long
-    +diaSemana: String
-    +horaInicio: Time
-    +horaFin: Time
-    +estaDisponible: Boolean
+    +dayOfWeek: String
+    +startTime: Time
+    +endTime: Time
+    +isAvailable: Boolean
   }
 
-  class Reserva {
+  class Reservation {
     +id: Long
-    +fecha: Date
-    +horaInicio: Time
-    +horaFin: Time
-    +estado: EstadoReserva
-    +confirmar()
-    +cancelar()
-    +validarDisponibilidad()
+    +date: Date
+    +startTime: Time
+    +endTime: Time
+    +status: ReservationStatus
+    +confirm()
+    +cancel()
+    +validateAvailability()
   }
 
-  class BloqueoHorario {
+  class ScheduleBlock {
     +id: Long
-    +fecha: Date
-    +horaInicio: Time
-    +horaFin: Time
-    +motivo: String
-    +activarBloqueo()
+    +date: Date
+    +startTime: Time
+    +endTime: Time
+    +reason: String
+    +activateBlock()
   }
 
-  class AdministradorCanchaRef {
-    +usuarioId: Long
-    +nombre: String
+  class CourtAdminReference {
+    +userId: Long
+    +name: String
   }
 
-  class PartidoRef {
-    +partidoId: Long
-    +titulo: String
+  class MatchReference {
+    +matchId: Long
+    +title: String
   }
 
-  enum EstadoCancha {
-    ACTIVA
-    INACTIVA
-    MANTENIMIENTO
+  enum CourtStatus {
+    ACTIVE
+    INACTIVE
+    MAINTENANCE
   }
 
-  enum EstadoReserva {
-    PENDIENTE
-    CONFIRMADA
-    CANCELADA
-    VENCIDA
+  enum ReservationStatus {
+    PENDING
+    CONFIRMED
+    CANCELLED
+    EXPIRED
   }
 
-  Cancha "1" -- "1" AdministradorCanchaRef
-  Cancha "1" *-- "0..*" HorarioDisponible
-  Cancha "1" *-- "0..*" BloqueoHorario
-  Cancha "1" -- "0..*" Reserva
-  Reserva "*" --> "1" PartidoRef
+  Court "1" -- "1" CourtAdminReference
+  Court "1" -- "0.." AvailableSchedule
+  Court "1" -- "0.." ScheduleBlock
+  Court "1" -- "0..*" Reservation
+  Reservation "*" --> "1" MatchReference
 }
 
-package "Suscripción Bounded Context" {
+package "Subscription Bounded Context" {
 
-  class PlanSuscripcion {
+  class SubscriptionPlan {
     +id: Long
-    +nombre: String
-    +descripcion: String
-    +precio: Decimal
-    +duracionDias: Integer
-    +limitePartidos: Integer
-    +crearPlan()
-    +actualizarPlan()
+    +name: String
+    +description: String
+    +price: Decimal
+    +durationDays: Integer
+    +matchLimit: Integer
+    +createPlan()
+    +updatePlan()
   }
 
-  class Suscripcion {
+  class Subscription {
     +id: Long
-    +fechaInicio: Date
-    +fechaFin: Date
-    +estado: EstadoSuscripcion
-    +activar()
-    +cancelar()
-    +renovar()
+    +startDate: Date
+    +endDate: Date
+    +status: SubscriptionStatus
+    +activate()
+    +cancel()
+    +renew()
   }
 
-  class Pago {
+  class Payment {
     +id: Long
-    +monto: Decimal
-    +fechaPago: DateTime
-    +metodo: MetodoPago
-    +estado: EstadoPago
-    +registrarPago()
-    +confirmarPago()
+    +amount: Decimal
+    +paymentDate: DateTime
+    +paymentMethod: PaymentMethod
+    +status: PaymentStatus
+    +registerPayment()
+    +confirmPayment()
   }
 
-  class UsuarioSuscriptorRef {
-    +usuarioId: Long
+  class SubscriberReference {
+    +userId: Long
     +email: String
   }
 
-  enum EstadoSuscripcion {
-    ACTIVA
-    VENCIDA
-    CANCELADA
-    PENDIENTE_PAGO
+  enum SubscriptionStatus {
+    ACTIVE
+    EXPIRED
+    CANCELLED
+    PENDING_PAYMENT
   }
 
-  enum MetodoPago {
-    TARJETA
+  enum PaymentMethod {
+    CARD
     YAPE
     PLIN
-    TRANSFERENCIA
+    BANK_TRANSFER
   }
 
-  enum EstadoPago {
-    PENDIENTE
-    APROBADO
-    RECHAZADO
-    REEMBOLSADO
+  enum PaymentStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    REFUNDED
   }
 
-  UsuarioSuscriptorRef "1" -- "0..*" Suscripcion
-  Suscripcion "*" --> "1" PlanSuscripcion
-  Suscripcion "1" *-- "0..*" Pago
+  SubscriberReference "1" -- "0..*" Subscription
+  Subscription "*" --> "1" SubscriptionPlan
+  Subscription "1" -- "0.." Payment
 }
-
 
 @enduml
