@@ -1,0 +1,119 @@
+@startuml
+title PartidoYA - Diagrama de Secuencia: Pago de reserva
+
+skinparam backgroundColor transparent
+skinparam sequence {
+    ArrowColor #1F3851
+    ActorBorderColor #1F3851
+    LifeLineBorderColor #1F3851
+    LifeLineBackgroundColor #F5F5F5
+    ParticipantBorderColor #1F3851
+    ParticipantBackgroundColor #EAF2F8
+    DatabaseBorderColor #497676
+    DatabaseBackgroundColor #E8F6F3
+}
+
+autonumber
+
+actor Jugador
+boundary "Angular SPA\nPantalla de pago" as Frontend
+control "PagoController" as Controller
+control "ProcesarPagoService\nSuscripción / Pagos BC" as PagoService
+control "ReservaService\nReserva BC" as ReservaService
+entity "PagoRepository" as PagoRepo
+entity "ReservaRepository" as ReservaRepo
+participant "Culqi API" as Culqi
+database "PartidoYA_DB" as DB
+
+Jugador -> Frontend: Selecciona método de pago
+Jugador -> Frontend: Ingresa datos y confirma
+
+Frontend -> Culqi: Generar token de pago
+activate Culqi
+
+alt Datos de pago inválidos
+    Culqi --> Frontend: Error de tokenización
+    Frontend --> Jugador: Mostrar datos de pago inválidos
+else Token generado
+    Culqi --> Frontend: Token de pago
+    deactivate Culqi
+
+    Frontend -> Controller: POST /api/pagos\n(idReserva, token)
+    activate Controller
+
+    Controller -> PagoService: procesarPago(idReserva, token, idUsuario)
+    activate PagoService
+
+    PagoService -> ReservaRepo: buscarPorId(idReserva)
+    activate ReservaRepo
+
+    ReservaRepo -> DB: SELECT reserva
+    activate DB
+    DB --> ReservaRepo: Datos de la reserva
+    deactivate DB
+
+    ReservaRepo --> PagoService: Reserva encontrada
+    deactivate ReservaRepo
+
+    alt Reserva inexistente o ya pagada
+        PagoService --> Controller: Operación no permitida
+        Controller --> Frontend: HTTP 409 Conflict
+        Frontend --> Jugador: Mostrar reserva no disponible
+    else Reserva pendiente
+        PagoService -> Culqi: Crear cargo\n(token, monto)
+        activate Culqi
+
+        alt Pago rechazado
+            Culqi --> PagoService: Cargo rechazado
+            deactivate Culqi
+
+            PagoService -> PagoRepo: guardarPagoFallido()
+            activate PagoRepo
+            PagoRepo -> DB: INSERT pago FALLIDO
+            DB --> PagoRepo: Registro guardado
+            PagoRepo --> PagoService: Confirmación
+            deactivate PagoRepo
+
+            PagoService --> Controller: Pago rechazado
+            Controller --> Frontend: HTTP 402 Payment Required
+            Frontend --> Jugador: Mostrar pago rechazado
+
+        else Pago aprobado
+            Culqi --> PagoService: Cargo aprobado\n(idTransaccion)
+            deactivate Culqi
+
+            PagoService -> PagoRepo: guardarPagoAprobado()
+            activate PagoRepo
+            PagoRepo -> DB: INSERT pago APROBADO
+            activate DB
+            DB --> PagoRepo: Pago registrado
+            deactivate DB
+            PagoRepo --> PagoService: Confirmación
+            deactivate PagoRepo
+
+            PagoService -> ReservaService: confirmarReserva(idReserva)
+            activate ReservaService
+
+            ReservaService -> ReservaRepo: actualizarEstado(CONFIRMADA)
+            activate ReservaRepo
+            ReservaRepo -> DB: UPDATE reserva
+            activate DB
+            DB --> ReservaRepo: Reserva actualizada
+            deactivate DB
+            ReservaRepo --> ReservaService: Confirmación
+            deactivate ReservaRepo
+
+            ReservaService --> PagoService: Reserva confirmada
+            deactivate ReservaService
+
+            PagoService --> Controller: Pago y reserva confirmados
+            Controller --> Frontend: HTTP 200 OK
+            Frontend --> Jugador: Mostrar comprobante y confirmación
+        end
+    end
+
+    deactivate PagoService
+    deactivate Controller
+end
+
+@enduml
