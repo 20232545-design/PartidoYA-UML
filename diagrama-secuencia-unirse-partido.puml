@@ -1,0 +1,106 @@
+@startuml
+title PartidoYA - Diagrama de Secuencia: Unirse a un partido
+
+skinparam backgroundColor transparent
+skinparam sequence {
+    ArrowColor #1F3851
+    ActorBorderColor #1F3851
+    LifeLineBorderColor #1F3851
+    LifeLineBackgroundColor #F5F5F5
+    ParticipantBorderColor #1F3851
+    ParticipantBackgroundColor #EAF2F8
+    DatabaseBorderColor #497676
+    DatabaseBackgroundColor #E8F6F3
+}
+
+autonumber
+
+actor Jugador
+boundary "Angular SPA\nDetalle del partido" as Frontend
+control "ParticipacionController" as Controller
+control "UnirsePartidoService\nPartido BC" as Service
+entity "PartidoRepository" as PartidoRepo
+entity "ParticipacionRepository" as ParticipacionRepo
+database "PartidoYA_DB" as DB
+
+Jugador -> Frontend: Visualiza el detalle del partido
+Jugador -> Frontend: Selecciona «Unirme al partido»
+
+Frontend -> Controller: POST /api/partidos/{id}/participantes\n(token JWT)
+activate Controller
+
+Controller -> Service: unirseAPartido(idPartido, idJugador)
+activate Service
+
+Service -> PartidoRepo: buscarPorId(idPartido)
+activate PartidoRepo
+
+PartidoRepo -> DB: SELECT partido
+activate DB
+DB --> PartidoRepo: Datos del partido
+deactivate DB
+
+PartidoRepo --> Service: Partido encontrado
+deactivate PartidoRepo
+
+Service -> Service: Verificar estado y cupos
+
+alt Partido inexistente o cerrado
+    Service --> Controller: Partido no disponible
+    Controller --> Frontend: HTTP 404 / 409
+    Frontend --> Jugador: Mostrar partido no disponible
+
+else Partido con aforo completo
+    Service --> Controller: Cupos agotados
+    Controller --> Frontend: HTTP 409 Conflict
+    Frontend --> Jugador: Mostrar «Cupos agotados»
+
+else Partido disponible
+    Service -> ParticipacionRepo: existeParticipacion(idPartido, idJugador)
+    activate ParticipacionRepo
+
+    ParticipacionRepo -> DB: SELECT participación
+    activate DB
+    DB --> ParticipacionRepo: Resultado
+    deactivate DB
+
+    ParticipacionRepo --> Service: Estado de participación
+    deactivate ParticipacionRepo
+
+    alt Jugador ya inscrito
+        Service --> Controller: Participación duplicada
+        Controller --> Frontend: HTTP 409 Conflict
+        Frontend --> Jugador: Mostrar «Ya estás inscrito»
+    else Jugador no inscrito
+        Service -> ParticipacionRepo: guardar(participacion)
+        activate ParticipacionRepo
+
+        ParticipacionRepo -> DB: INSERT INTO participantes
+        activate DB
+        DB --> ParticipacionRepo: Participación registrada
+        deactivate DB
+
+        ParticipacionRepo --> Service: Confirmación
+        deactivate ParticipacionRepo
+
+        Service -> PartidoRepo: actualizarCupos(idPartido)
+        activate PartidoRepo
+
+        PartidoRepo -> DB: UPDATE cupos disponibles
+        activate DB
+        DB --> PartidoRepo: Cupos actualizados
+        deactivate DB
+
+        PartidoRepo --> Service: Actualización confirmada
+        deactivate PartidoRepo
+
+        Service --> Controller: Participación confirmada
+        Controller --> Frontend: HTTP 200 OK
+        Frontend --> Jugador: Mostrar confirmación de asistencia
+    end
+end
+
+deactivate Service
+deactivate Controller
+
+@enduml
